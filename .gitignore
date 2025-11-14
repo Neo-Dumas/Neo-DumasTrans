@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*$py.class
+*.so
+*.dll
+*.exe
+*.pyw
+*.pyz
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+*.tar.gz
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+python-*
+playwright-browsers/
+venv/
+env/
+ENV/
+virtualenv/
+
+# Logs and temp
+*.log
+*.tmp
+*.temp
+*.tmp.*
+*.temp.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.api_keys.json
+*.key
+*.secret
+*.token
+
+# Project-specific directories
+models/
+workdir/
+MinerU/
+
+# Auto-generated local config / debug files
+last_settings.json
+debug.txt
+settings.json
