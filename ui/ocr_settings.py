@@ -1,4 +1,3 @@
-# ui/ocr_settings.py
 from PyQt5.QtWidgets import (
     QGroupBox, QVBoxLayout, QHBoxLayout, QLineEdit, QLabel,
     QCheckBox
@@ -16,21 +15,25 @@ class OcrSettingsWidget:
         self._setup_connections()
 
     def _build_ui(self):
-        group = QGroupBox("OCR 设置 (MinerU)")
+        group = QGroupBox("OCR 设置（MinerU OCR Settings）")
         group.setFlat(True)
+        group.setObjectName("ocrSettingsGroup")  # 可选：为分组框也命名
         main_layout = QVBoxLayout(group)
         main_layout.setSpacing(12)
 
-        label_width = 90
-
         # MinerU API Token
         api_layout = QHBoxLayout()
-        self.mineru_api_key_edit = QLineEdit()
-        self.mineru_api_key_edit.setPlaceholderText("请输入 MinerU OCR 的 API Token")
-        self.mineru_api_key_edit.setEchoMode(QLineEdit.Password)
-        self.show_mineru_api_checkbox = QCheckBox("显示")
         api_label = QLabel("MinerU Token:")
-        api_label.setFixedWidth(label_width)
+        api_label.setObjectName("mineruApiLabel")
+
+        self.mineru_api_key_edit = QLineEdit()
+        self.mineru_api_key_edit.setObjectName("mineruApiKeyEdit")  # ← 关键
+        self.mineru_api_key_edit.setPlaceholderText("请输入 MinerU OCR 的 API Token（Enter MinerU OCR API Token）")
+        self.mineru_api_key_edit.setEchoMode(QLineEdit.Password)
+
+        self.show_mineru_api_checkbox = QCheckBox("显示（Show）")
+        self.show_mineru_api_checkbox.setObjectName("showMineruApiCheckbox")  # ← 关键
+
         api_layout.addWidget(api_label)
         api_layout.addWidget(self.mineru_api_key_edit)
         api_layout.addWidget(self.show_mineru_api_checkbox)
@@ -38,10 +41,13 @@ class OcrSettingsWidget:
 
         # MinerU Base URL
         url_layout = QHBoxLayout()
-        self.mineru_base_url_edit = QLineEdit()
-        self.mineru_base_url_edit.setPlaceholderText("如：https://api.mineru.com/v1")
         url_label = QLabel("MinerU URL:")
-        url_label.setFixedWidth(label_width)
+        url_label.setObjectName("mineruUrlLabel")
+
+        self.mineru_base_url_edit = QLineEdit()
+        self.mineru_base_url_edit.setObjectName("mineruBaseUrlEdit")  # ← 关键
+        self.mineru_base_url_edit.setPlaceholderText("例如：https://api.mineru.com/v1（e.g., https://api.mineru.com/v1）")
+
         url_layout.addWidget(url_label)
         url_layout.addWidget(self.mineru_base_url_edit)
         main_layout.addLayout(url_layout)

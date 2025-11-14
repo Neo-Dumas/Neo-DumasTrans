@@ -1,86 +1,253 @@
-/* ui/styles.qss */
+/* ui/styles.qss - 贵气紫主题（修复对齐 & 拥挤 & 按钮颜色） */
 
 QMainWindow {
-    background: qlineargradient(x1: 0, y1: 0, x2: 1, y2: 1,
-                                stop: 0 #f8f9fa, stop: 1 #e9ecef);
+    background-color: #352346;
+    color: #e8d9c5;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+QWidget {
+    background-color: #352346;
+    color: #e8d9c5;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+/* ========== 通用基础样式 ========== */
+
+QLabel {
+    color: #e8d9c5;
+    font-size: 10pt;
+    padding-right: 8px; /* 为标签留出空间 */
 }
 
 QGroupBox {
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    margin-top: 16px;
+    border: 1px solid #4a3f5a;
+    border-radius: 6px;
+    margin-top: 12px;
     padding-top: 12px;
-    color: #1e293b;
-    font-weight: 600;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: #f5e9d4;
+    font-weight: bold;
     font-size: 11pt;
-    background-color: #ffffff;
+    background-color: #251b38;
 }
+
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 12px;
-    padding: 0 8px 0 8px;
-    background-color: #ffffff;
+    left: 10px;
+    padding: 0 6px;
+    color: #f5e9d4;
+}
+
+QComboBox, QLineEdit, QSpinBox {
+    background-color: #2d2242;
+    border: 1px solid #4a3f5a;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #e8d9c5;
+    selection-background-color: #b19cd9;
+    selection-color: white;
+    font-size: 10pt;
+    min-height: 28px;
+    max-width: 300px;
+}
+
+QComboBox:focus, QLineEdit:focus, QSpinBox:focus {
+    border-color: #c7a1ff;
 }
 
 QPushButton {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #63B8FF, stop: 1 #436EEE); /* 使用之前的悬停颜色作为新的默认背景 */
+    background-color: #b19cd9;
     border: none;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: 6px;
+    color: #1a122a;
+    padding: 6px 14px;
     font-size: 10pt;
-    min-height: 15px;
-}
-QPushButton:hover {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #436EEE, stop: 1 #436EEE); /* 更深的蓝色渐变用于悬停 */
-}
-QPushButton:pressed {
-    background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,
-                                stop: 0 #1E90FF, stop: 1 #007FFF); /* 较深的蓝色保持按下状态的独特性 */
+    min-height: 28px;
+    min-width: 100px;
+    max-width: 160px;
 }
 
-QLineEdit, QComboBox {
-    background-color: #ffffff;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 8px 12px;
-    color: #2d3748;
-    font-size: 10pt;
-    selection-background-color: #4f46e5;
+QPushButton:hover {
+    background-color: #d0b6ff;
 }
-QLineEdit:focus, QComboBox:focus {
-    border-color: #4f46e5;
+
+QPushButton:pressed {
+    background-color: #9a7fd9;
 }
-QLineEdit:read-only {
-    background-color: #f8fafc;
-    color: #64748b;
+
+QPushButton:disabled {
+    background-color: #3a334a;
+    color: #7a6d8a;
 }
 
 QCheckBox {
     spacing: 8px;
-    font-weight: 500;
-}
-QCheckBox::indicator {
-    width: 18px;
-    height: 18px;
-    border: 2px solid #cbd5e1;
-    border-radius: 4px;
-    background: #ffffff;
-}
-QCheckBox::indicator:checked {
-    background: #4f46e5;
-    border-color: #4f46e5;
-}
-QCheckBox::indicator:checked:hover {
-    background: #6366f1;
-    border-color: #6366f1;
+    color: #e8d9c5;
 }
 
-QLabel {
-    color: #374151;
-    font-weight: 500;
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #5a506a;
+    border-radius: 3px;
+    background: #2d2242;
+}
+
+QCheckBox::indicator:checked {
+    background: #c7a1ff;
+    border-color: #c7a1ff;
+}
+
+/* ========== 精细化控件样式 ========== */
+
+/* --- 主标题 --- */
+#mainTitle {
+    color: #f5e9d4;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 0;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* --- 开始按钮：改为优雅紫色渐变，避免刺眼 --- */
+#startButton {
+    background-color: #8a6ba8;
+    background-image: linear-gradient(135deg, #8a6ba8, #b19cd9);
+    color: white;
+    font-weight: bold;
+    min-width: 250px;
+    max-width: 250px;
+    padding: 8px 16px;
+    font-size: 11pt;
+    border-radius: 6px;
+}
+
+#startButton:hover {
+    background-color: #a084c0;
+    background-image: linear-gradient(135deg, #a084c0, #d0b6ff);
+}
+
+#startButton:disabled,
+#startButton[translating="true"] {
+    background-color: #5a4a5a;
+    background-image: none;
+    color: #a090a0;
+}
+
+/* --- 文件选择按钮：统一宽度，居中对齐 --- */
+#selectPdfButton, #selectOutputButton {
+    min-width: 100px;
+    max-width: 160px;
+    background-color: #9a8cb8;
+    padding: 6px 12px;
     font-size: 10pt;
+}
+
+#selectPdfButton:hover, #selectOutputButton:hover {
+    background-color: #b09ed0;
+}
+
+/* --- 文件路径输入框：只读，浅灰背景 --- */
+#pdfPathEdit, #outputDirEdit {
+    background-color: #281f38;
+    color: #c8b9a5;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- PDF 类型下拉框 --- */
+#pdfTypeCombo {
+    min-width: 320px;
+    max-width: 320px;
+}
+
+/* --- OCR 设置区域 --- */
+#mineruApiKeyEdit {
+    min-width: 240px;
+    max-width: 365px;
+    background-color: #332848;
+
+}
+
+#mineruBaseUrlEdit {
+    min-width: 240px;
+    max-width: 365px;
+}
+
+#showMineruApiCheckbox {
+    color: #d0c0a0;
+}
+
+/* --- 模型配置：运行模式 & LLM 选择 --- */
+#runModeCombo, #llmCombo {
+    min-width: 260px;
+    max-width: 500px;
+}
+
+/* --- API 相关输入框 --- */
+#apiKeyEdit {
+    min-width: 280px;
+    max-width: 280px;
+    background-color: #332848;
+    border-color: #8a6ba8;
+    font-family: monospace;
+}
+
+#baseUrlEdit, #modelNameEdit {
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- 本地模型路径 --- */
+#localModelPathEdit {
+    min-width: 100px;
+    max-width: 180px;
+    background-color: #332848;
+    border-color: #8a6ba8;
+}
+
+#browseLocalModelButton {
+    min-width: 100px;
+    max-width: 100px;
+    background-color: #8a7ca8;
+    padding: 6px 12px;
+    font-size: 10pt;
+}
+
+#browseLocalModelButton:hover {
+    background-color: #a090c0;
+}
+
+/* --- 并发数量调节器 --- */
+#concurrencySpinbox {
+    min-width: 80px;
+    max-width: 80px;
+}
+
+/* ========== 布局优化：增加间距，防止拥挤 ========== */
+
+/* 所有布局组件增加间距 */
+QVBoxLayout, QHBoxLayout {
+    spacing: 12px;
+}
+
+QHBoxLayout > QLabel {
+    padding-right: 8px;
+}
+
+/* 控件间最小间距 */
+QLabel ~ QLineEdit,
+QLabel ~ QComboBox,
+QLabel ~ QSpinBox,
+QLabel ~ QPushButton {
+    margin-left: 8px;
+}
+
+/* 防止文本溢出 */
+QLineEdit, QComboBox {
+    max-width: 300px;
 }

@@ -1,124 +1,214 @@
 # ui/ui_components.py
-from PyQt5.QtWidgets import QVBoxLayout, QLabel, QHBoxLayout, QPushButton, QWidget
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QVBoxLayout, QLabel, QHBoxLayout, QPushButton, QWidget,
+    QComboBox, QSizePolicy
+)
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import Qt, QSize
 import os
 
 from .file_settings import FileSettingsWidget
 from .ocr_settings import OcrSettingsWidget
 from .model_config import ModelConfigWidget
 from .translate_settings import TranslateSettingsWidget
-from PyQt5.QtWidgets import QGroupBox, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QLabel, QComboBox
 
 
 class PdfTranslationUI:
     def __init__(self, parent):
         self.parent = parent
-        self.layout = QVBoxLayout()
         self.widgets = {}
-
         self._build_ui()
 
     def _build_ui(self):
-        self.layout.setSpacing(12)
-        self.layout.setContentsMargins(16, 16, 16, 16)
+        # === 外层水平布局：左右留白（用于居中）===
+        outer_layout = QHBoxLayout()
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+        outer_layout.addStretch()  # 左侧空白
 
-        # === 标题 ===
-        title = QLabel("能够有效处理公式、表格、图片、复杂排版和超大文件的PDF翻译软件")
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("""
-            QLabel {
-                color: #1e293b;
-                font-size: 20px;
-                font-weight: bold;
-                padding: 8px;
-                margin-bottom: 8px;
-            }
-        """)
-        self.layout.addWidget(title)
+        # === 中央容器：固定总宽 = left + gap + right ===
+        COLUMN_WIDTH = 540      # 每栏宽度（可根据内容调整）
+        GAP = 36                # 两栏间距
 
-        # === 文件设置 ===
+        central_widget = QWidget()
+        central_layout = QHBoxLayout()
+        central_layout.setContentsMargins(0, 0, 0, 0)
+        central_layout.setSpacing(GAP)
+
+        # --- 左侧栏（固定宽度）---
+        left_widget = QWidget()
+        left_widget.setFixedWidth(COLUMN_WIDTH)
+        left_layout = QVBoxLayout()
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(16)
+
+        # 文件设置
         self.file_widget = FileSettingsWidget()
-        self.layout.addWidget(self.file_widget.group_box)
+        file_group = self.file_widget.group_box
+        file_group.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        left_layout.addWidget(file_group)
         self.widgets.update(self.file_widget.get_widgets())
 
-        # === PDF 类型选择（提前创建，用于控制后续模块显示）===
+        # PDF 类型选择
         type_layout = QHBoxLayout()
+        type_layout.setContentsMargins(0, 0, 0, 0)
         self.pdf_type_combo = QComboBox()
-        self.pdf_type_combo.addItem("文字型 PDF（本地提取文本）", "txt")
-        self.pdf_type_combo.addItem("图片型 PDF（本地 OCR 识别）", "ocr")
-        self.pdf_type_combo.addItem("图片型 PDF（VLM 模式，需输入 MinerU Token 或本地部署）", "vlm")
-        type_layout.addWidget(QLabel("PDF 类型:"))
+        self.pdf_type_combo.setObjectName("pdfTypeCombo")  # ← 添加 objectName
+        self.pdf_type_combo.addItem("文字型 PDF（Text-based PDF）", "txt")
+        self.pdf_type_combo.addItem("图片型 PDF（Image-based PDF + OCR）", "ocr")
+        self.pdf_type_combo.addItem("图片型 PDF（VLM 模式）(Image-based PDF + VLM)", "vlm")
+        type_layout.addWidget(QLabel("PDF 类型（PDF Type）:"))
         type_layout.addWidget(self.pdf_type_combo)
-        self.layout.addLayout(type_layout)
+        type_layout.addStretch()
+        left_layout.addLayout(type_layout)
         self.widgets['pdf_type_combo'] = self.pdf_type_combo
 
-        # === OCR 设置（MinerU）—— 初始隐藏 ===
+        # OCR 设置（初始隐藏，固定高度）
         self.ocr_widget = OcrSettingsWidget()
-        self.ocr_widget.group_box.setVisible(False)  # 默认隐藏
-        self.layout.addWidget(self.ocr_widget.group_box)
+        self.ocr_widget.group_box.setVisible(False)
+        self.ocr_widget.group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        left_layout.addWidget(self.ocr_widget.group_box)
         self.widgets.update(self.ocr_widget.get_widgets())
 
-        # === 翻译模型配置 ===
-        self.model_widget = ModelConfigWidget()
-        self.layout.addWidget(self.model_widget.group_box)
-        self.widgets.update(self.model_widget.get_widgets())
+        left_layout.addStretch()  # 底部弹性，防止控件被拉高
+        left_widget.setLayout(left_layout)
 
-        # === 翻译设置 ===
+        # --- 右侧栏（固定宽度）---
+        right_widget = QWidget()
+        right_widget.setFixedWidth(COLUMN_WIDTH)
+        right_layout = QVBoxLayout()
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(16)
+
+        # 翻译设置（在上）
         self.translate_widget = TranslateSettingsWidget()
-        self.layout.addWidget(self.translate_widget.group_box)
+        right_layout.addWidget(self.translate_widget.group_box)
         self.widgets.update(self.translate_widget.get_widgets())
 
-        # === 开始按钮 ===
-        button_layout = QHBoxLayout()
-        self.start_button = QPushButton("🚀 开始翻译")
-        self.start_button.setMinimumHeight(40)
-        self.start_button.setStyleSheet("""
-            QPushButton {
-                font-size: 14px;
-                font-weight: bold;
-                background-color: #4f46e5;
-                color: white;
-                border: none;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #4338ca;
-            }
-        """)
-        button_layout.addStretch()
-        button_layout.addWidget(self.start_button, 0, Qt.AlignCenter)
-        button_layout.addStretch()
-        self.layout.addLayout(button_layout)
+        # 模型配置（在下）
+        self.model_widget = ModelConfigWidget()
+        right_layout.addWidget(self.model_widget.group_box)
+        self.widgets.update(self.model_widget.get_widgets())
+
+        right_layout.addStretch()  # 底部弹性
+        right_widget.setLayout(right_layout)
+
+        # 添加左右栏到中央容器
+        central_layout.addWidget(left_widget)
+        central_layout.addWidget(right_widget)
+        central_widget.setLayout(central_layout)
+
+        # 将中央容器加入外层（实现居中）
+        outer_layout.addWidget(central_widget)
+        outer_layout.addStretch()  # 右侧空白
+
+        # === Logo + 标题（放在最顶部，居中）===
+        top_layout = QVBoxLayout()
+        top_layout.setSpacing(24)
+        top_layout.setContentsMargins(32, 32, 32, 24)
+
+        # Logo
+        logo_label = QLabel()
+        logo_label.setAlignment(Qt.AlignCenter)
+        logo_label.setObjectName("logoLabel")  # ← 添加 objectName
+        top_layout.addWidget(logo_label)
+
+        logo_svg_path = os.path.join(os.path.dirname(__file__), "..", "logo.svg")
+        logo_png_path = os.path.join(os.path.dirname(__file__), "..", "logo.png")
+        max_size = 240
+
+        pixmap = None
+        if os.path.exists(logo_svg_path):
+            from PyQt5.QtSvg import QSvgRenderer
+            from PyQt5.QtGui import QImage, QPainter
+            renderer = QSvgRenderer(logo_svg_path)
+            if renderer.isValid():
+                default_size = renderer.defaultSize()
+                if default_size.isEmpty():
+                    default_size = QSize(100, 100)
+                scaled_size = default_size.scaled(max_size, max_size, Qt.KeepAspectRatio)
+                image = QImage(scaled_size, QImage.Format_ARGB32)
+                image.fill(Qt.transparent)
+                painter = QPainter(image)
+                renderer.render(painter)
+                painter.end()
+                pixmap = QPixmap.fromImage(image)
+        elif os.path.exists(logo_png_path):
+            original_pixmap = QPixmap(logo_png_path)
+            if not original_pixmap.isNull():
+                scaled_size = original_pixmap.size().scaled(max_size, max_size, Qt.KeepAspectRatio)
+                pixmap = original_pixmap.scaled(scaled_size, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
+        if pixmap and not pixmap.isNull():
+            logo_label.setPixmap(pixmap)
+        else:
+            print("警告：未找到有效的 logo.svg 或 logo.png，图标将不显示。")
+
+        # 标题
+        title = QLabel(
+            "能够有效处理公式、表格、图片、复杂排版和超大文件的PDF翻译软件\n"
+            "(PDF Translator for Formulas, Tables, Images, Complex Layouts & Large Files)"
+        )
+        title.setAlignment(Qt.AlignCenter)
+        title.setWordWrap(True)
+        title.setObjectName("mainTitle")  # ← 添加 objectName
+        top_layout.addWidget(title)
+
+        # 创建顶部 widget 并加入 outer_layout 的最前面
+        top_widget = QWidget()
+        top_widget.setLayout(top_layout)
+
+        # 最终主布局：顶部 + 中央两栏
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(top_widget)
+        main_layout.addLayout(outer_layout)
+
+        # === 独立的“开始翻译”按钮（居中于底部，作为独立部分）===
+        bottom_button_layout = QHBoxLayout()
+        bottom_button_layout.setContentsMargins(0, 8, 0, 300)  # 上边距24，下边距32，美观留白
+        bottom_button_layout.addStretch()
+
+        self.start_button = QPushButton("🚀 开始翻译（Start Translation）")
+        self.start_button.setObjectName("startButton")  # 保持原名，QSS 依赖此名称
+        self.start_button.setProperty("translating", False)
+        # 可选：限制最大宽度，避免在超宽屏上按钮过长
+        self.start_button.setMaximumWidth(400)
+        bottom_button_layout.addWidget(self.start_button)
+
+        bottom_button_layout.addStretch()
         self.widgets['start_button'] = self.start_button
 
-        # === 连接信号 ===
+        main_layout.addLayout(bottom_button_layout)
+
+        # === 信号与样式 ===
         self.pdf_type_combo.currentTextChanged.connect(self._on_pdf_type_changed)
-
-        # 初始化 UI 状态
         self._on_pdf_type_changed()
-
         self._apply_styles()
 
+        # 保存主 widget
+        self._main_widget = QWidget()
+        self._main_widget.setLayout(main_layout)
+    
     def _on_pdf_type_changed(self):
         current_type = self.pdf_type_combo.currentData()
-        # 只有在 VLM 模式下才显示 MinerU OCR 设置
-        show_ocr = (current_type == "vlm")
+        show_ocr = (current_type == "vlm")  # 请根据实际逻辑确认
         self.ocr_widget.group_box.setVisible(show_ocr)
-
-
 
     def _apply_styles(self):
         style_file = os.path.join(os.path.dirname(__file__), "styles.qss")
         try:
             with open(style_file, "r", encoding="utf-8") as f:
                 self.parent.setStyleSheet(f.read())
-        except FileNotFoundError:
-            print(f"警告: 样式文件未找到: {style_file}，使用默认样式。")
         except Exception as e:
-            print(f"加载样式文件失败: {e}")
+            print(f"样式加载失败: {e}")
+
+    def get_widget(self):
+        return self._main_widget
 
     def get_layout(self):
-        return self.layout
+        return self._main_widget.layout()
 
     def set_pdf_filename(self, filename):
         self.file_widget.pdf_path_edit.setText(os.path.basename(filename) if filename else "")
@@ -127,32 +217,12 @@ class PdfTranslationUI:
         self.file_widget.output_dir_edit.setText(dir_path or "")
 
     def set_start_button_translating(self, translating=True):
+        self.start_button.setProperty("translating", translating)
         if translating:
-            self.start_button.setText("🔄 翻译中...")
+            self.start_button.setText("🔄 翻译中...（Translating...）")
             self.start_button.setEnabled(False)
-            self.start_button.setStyleSheet("""
-                QPushButton {
-                    font-size: 14px;
-                    font-weight: bold;
-                    background-color: #94a3b8;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                }
-            """)
         else:
-            self.start_button.setText("🚀 开始翻译")
+            self.start_button.setText("🚀 开始翻译（Start Translation）")
             self.start_button.setEnabled(True)
-            self.start_button.setStyleSheet("""
-                QPushButton {
-                    font-size: 14px;
-                    font-weight: bold;
-                    background-color: #4f46e5;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                }
-                QPushButton:hover {
-                    background-color: #4338ca;
-                }
-            """)
+        self.start_button.style().unpolish(self.start_button)
+        self.start_button.style().polish(self.start_button)
