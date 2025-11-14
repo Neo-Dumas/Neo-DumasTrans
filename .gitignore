@@ -57,3 +57,6 @@ MinerU/
 last_settings.json
 debug.txt
 settings.json
+
+# Sensitive local deployment script
+deploy.bat
