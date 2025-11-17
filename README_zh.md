@@ -93,6 +93,13 @@
 
 > 📌 完整版首次运行即自动加载模型，无需额外配置。
 
+### 从仓库安装
+
+```bash
+git clone https://github.com/Neo-Dumas/Neo-DumasTrans.git
+cd Neo-DumasTrans
+pip install -r requirements.txt
+```
 ---
 
 ## 🎯 适用场景

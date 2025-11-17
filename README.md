@@ -81,6 +81,13 @@ Two versions available:
 
 🔑 Extraction Code: `nu9u`
 
+### Install from Source
+
+```bash
+git clone https://github.com/Neo-Dumas/Neo-DumasTrans.git
+cd Neo-DumasTrans
+pip install -r requirements.txt
+```
 ---
 
 ## ⚙️ Usage
