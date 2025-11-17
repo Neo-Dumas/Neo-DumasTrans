@@ -127,3 +127,6 @@ pip install -r requirements.txt
 - [MathJax](https://www.mathjax.org/): High-quality math rendering  
 - [llama.cpp](https://github.com/ggerganov/llama.cpp): Efficient local LLM inference  
 - Tencent HunYuan Team: Open-sourced [HunYuan-MT translation models](https://hunyuan.tencent.com/)
+
+## 📄 License  
+Distributed under the AGPL-3.0 License. See [LICENSE](LICENSE) for more information.

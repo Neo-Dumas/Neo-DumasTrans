@@ -127,3 +127,6 @@ pip install -r requirements.txt
 - [MathJax](https://www.mathjax.org/)：高质量数学公式渲染  
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)：高效的本地 LLM 推理框架  
 - 腾讯混元团队：开源 [HunYuan-MT 系列翻译模型](https://hunyuan.tencent.com/)
+
+## 📄 许可证  
+本项目采用 AGPL-3.0 许可证发布。详情请参阅 [LICENSE](LICENSE) 文件。
