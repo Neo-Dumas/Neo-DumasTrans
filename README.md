@@ -1,120 +1,122 @@
 # Neo-DumasTrans
 
-> 一个能精准解析文本及图片 PDF，进行大模型翻译和高保真排版，支持公式、表格、图片、超大文件、多页面混杂和复杂排版的 PDF 翻译软件。
+> A PDF translation tool that accurately parses text and image-based PDFs, leverages large language models for high-quality translation, and preserves original layout with pixel-perfect fidelity—supporting formulas, tables, images, multi-page mixed layouts, and massive files.
+
+[中文](README_zh.md) | English
 
 ---
 
-## ✨ 核心功能
+## ✨ Core Features
 
-- **全自动端到端流水线**  
-  从原始 PDF 输入到最终翻译叠加 PDF 输出，全程无需人工干预。
+- **Fully Automated End-to-End Pipeline**  
+  From raw PDF input to translated, overlaid PDF output—no manual intervention required.
 
-- **采取高效的 MinerU 引擎，三模式针对性解析**
-  - `txt`：纯文本 PDF → 使用 **本地 MinerU** 提取结构化内容  
-  - `ocr`：扫描/图像 PDF → 使用 **本地 MinerU + OCR** 还原文字与布局  
-  - `vlm`：复杂排版（含公式/表格/图文混排）→ 调用 **MinerU 在线 API** 获取高精度结构（需 API Token）
+- **Powered by Efficient MinerU Engine with Three Parsing Modes**
+  - `txt`: Text-based PDFs → parsed using **local MinerU** for structured content  
+  - `ocr`: Scanned/image PDFs → processed via **local MinerU + OCR** to recover text and layout  
+  - `vlm`: Complex layouts (with formulas, tables, mixed content) → uses **MinerU online API** for high-precision structure (requires API token)
 
-- **本地大模型翻译（专为 HunYuan-MT 优化）**  
-  - 支持加载 GGUF 格式的本地模型，**对 `Hunyuan-MT-7B.Q4_K_S.gguf` 进行了包括提示词结构化、译文过滤等一系列调优**  
-  - 翻译质量接近主流大参数云端模型，适合离线场景  
-  - 提供 **完整版**（内置该模型）与 **轻量版**（需自行提供模型）
+- **Local LLM Translation (Optimized for HunYuan-MT)**  
+  - Supports GGUF-format local models; **specifically tuned for `Hunyuan-MT-7B.Q4_K_S.gguf`** with structured prompts and post-filtering  
+  - Translation quality rivals large cloud models—ideal for offline use  
+  - Available in **Full Version** (includes the model) and **Lightweight Version** (bring your own model)
 
-- **高保真背景融合覆盖**  
-  仅对**需要翻译的文本区域**进行覆盖处理：  
-  - 采样局部背景颜色（非简单白色），生成自然过渡底色  
-  - 非翻译区域（如图片、装饰元素、代码块等）**完全保留原貌**  
-  - 避免传统“涂白”造成的视觉割裂，确保页面风格一致
+- **High-Fidelity Background-Aware Overlay**  
+  Only **translatable text regions** are modified:  
+  - Samples local background color (not plain white) for natural blending  
+  - Non-text areas (images, decorations, code blocks, etc.) remain **completely untouched**  
+  - Avoids the jarring "white-out" effect, preserving visual consistency
 
-- **像素级译文叠加**  
-  将译文精准覆盖在之前的位置，保留原始PDF的视觉体验。
+- **Pixel-Precise Translation Overlay**  
+  Translated text is rendered exactly over the original position, maintaining the PDF’s visual integrity.
 
-- **自动分块并行处理**  
-  超大文件按页切分（默认 25 页/块），支持高并发，避免内存溢出。
+- **Automatic Chunking & Parallel Processing**  
+  Large files are split by pages (default: 25 pages/chunk) and processed concurrently to prevent memory overflow.
 
-- **智能中间文件管理**  
-  启动时自动检查工作区：  
-  - 删除 **超过 7 天** 的临时文件  
-  - 若工作区总大小 **超过 10GB**，则清理工作区  
-  → 便于意外中断后恢复任务或调试分析，同时避免磁盘爆满。
-
----
-
-## 🚀 技术优势
-
-### 1. 在线翻译采用结构化 JSON 批量，高效且防错乱
-- 将多个可翻译条目打包为结构化 JSON 数组提交大模型。  
-- 对返回内容进行结构检查，确保格式与输入一致。  
-- 显著降低 token 消耗（减少重复 prompt 开销），同时避免段落错位、标签丢失或顺序混乱。
-
-### 2. 专为 HunYuan-MT 优化的本地推理
-- 基于 **llama.cpp** 加载 GGUF 模型，支持 CPU 和 GPU 推理  
-- 针对 `Hunyuan-MT-7B.Q4_K_S.gguf` 定制 prompt 模板与输出解析逻辑  
-- **注意**：其他 GGUF 模型可能因格式或指令不兼容导致翻译效果下降
-
-### 3. 背景感知式覆盖，复刻原版视觉体验
-- 在需翻译区域**绘制与周围背景色相近的覆盖层**  
-- 最终 PDF = **原始页面（含图像/水印/装饰）** + **自然融合的译文图层**  
-- 视觉上实现“原文消失、译文浮现”的无缝效果，而非生硬遮盖
-
-### 4. 双阶段字号与布局校准，确保零溢出
-- **第一阶段（预估）**：使用 Pillow 对翻译文本进行字体宽度/高度粗略估算，初步确定字号上限。  
-- **第二阶段（精校）**：通过 Playwright 启动真实浏览器，在 HTML 中动态测量实际渲染尺寸，并迭代调整字号，确保内容 100% 落入原始 bbox 区域内，且尽可能填满，杜绝溢出、重叠或截断。
-
-### 5. Playwright + Chromium 渲染，位置精准如原版
-- 利用 Playwright 驱动 Google Chrome 将 HTML 转为 PDF。  
-- 完全复用浏览器原生排版引擎，兼容数学公式（MathJax）、表格等复杂元素。  
-- 输出 PDF 具备像素级定位精度，视觉效果媲美人工排版。
+- **Smart Intermediate File Management**  
+  On startup, the workspace is automatically cleaned:  
+  - Temporary files older than **7 days** are deleted  
+  - If total workspace size exceeds **10GB**, cleanup is triggered  
+  → Enables recovery after crashes while preventing disk exhaustion.
 
 ---
 
-## 📦 快速开始
+## 🚀 Technical Advantages
 
-### 下载 Windows 版（绿色免安装）
-这里提供两个版本，请根据需求选择：
+### 1. Structured JSON Batch Translation (Online Mode)
+- Multiple translatable segments are batched into a structured JSON array for LLM inference.  
+- Output is validated to ensure format consistency with input.  
+- Reduces token usage (less prompt repetition) and prevents paragraph misalignment or tag loss.
 
-| 版本 | 说明 | 下载链接 |
-|------|------|--------|
-| **完整版** | 内置 `Hunyuan-MT-7B.Q4_K_S.gguf` 开箱即用 | 🔗 [百度网盘链接（完整版）]( https://pan.baidu.com/s/1eN4mhNKk7DEcPbtmnP-R1g?pwd=nu9u)|
-| **轻量版** | 不含模型，需自行指定 | 🔗 [百度网盘链接（轻量版）]( https://pan.baidu.com/s/1eN4mhNKk7DEcPbtmnP-R1g?pwd=nu9u)|
+### 2. HunYuan-MT–Optimized Local Inference
+- Runs GGUF models via **llama.cpp**, supporting both CPU and GPU  
+- Custom prompt templates and output parsers tailored for `Hunyuan-MT-7B.Q4_K_S.gguf`  
+- ⚠️ Other GGUF models may underperform due to format or instruction mismatches
 
-🔑 提取码：`nu9u`
+### 3. Background-Aware Rendering for Visual Fidelity
+- Draws overlay layers matching the surrounding background color  
+- Final PDF = **original page (with images/watermarks/decorations)** + **seamlessly blended translation layer**  
+- Achieves a “disappear-and-replace” effect—natural, not obstructive
 
----
+### 4. Two-Stage Font & Layout Calibration (Zero Overflow Guarantee)
+- **Stage 1 (Estimation)**: Uses Pillow to roughly estimate text width/height and set initial font size.  
+- **Stage 2 (Refinement)**: Launches a real browser via Playwright to measure actual rendered dimensions and iteratively adjusts font size—ensuring 100% containment within the original bounding box while maximizing fill.
 
-## ⚙️ 使用方式
-
-1. 解压后，双击根目录下 `run.bat` 启动图形界面。
-2. 在设置中选择：
-   - **PDF 解析模式**：`txt` / `ocr` / `vlm`
-   - **翻译后端**：云端 API 或 本地模型（推荐使用 `Hunyuan-MT-7B.Q4_K_S.gguf`）
-3. 选择 PDF 文件，点击“开始翻译”。
-
-> 📌 完整版首次运行即自动加载模型，无需额外配置。
-
----
-
-## 🎯 适用场景
-
-- 学术论文 / 技术文档的高质量翻译（保留公式、图表位置）  
-- 扫描合同、报告的双语对照处理  
-- 无网络环境下的离线高保真本地化  
-- 文档自动化翻译流水线（支持断点续跑）
+### 5. Playwright + Chromium for Pixel-Accurate Output
+- Converts HTML to PDF using Playwright-driven Google Chrome.  
+- Leverages native browser rendering engine—fully compatible with MathJax formulas, complex tables, etc.  
+- Delivers publication-grade visual precision, indistinguishable from manual typesetting.
 
 ---
 
-## 🧱 架构特点
+## 📦 Quick Start
 
-- **流水线式异步架构**：7 个阶段通过 `asyncio.Queue` 解耦，支持并发与错误隔离。  
-- **模块化设计**：每个功能（pdf预处理、MinerU 解析、翻译、背景覆盖、渲染、PDF 转换、合并）均为独立模块。  
-- **容错与跳过机制**：已成功处理的文件自动跳过；单个 chunk 失败不影响整体流程。  
-- **日志系统**：使用 `loguru` 记录详细执行状态，便于排查问题。
+### Download Windows Version (Portable, No Installation)
+Two versions available:
+
+| Version | Description | Download |
+|--------|-------------|--------|
+| **Full** | Includes `Hunyuan-MT-7B.Q4_K_S.gguf` – ready to run | 🔗 [Baidu Netdisk (Full)](https://pan.baidu.com/s/1eN4mhNKk7DEcPbtmnP-R1g?pwd=nu9u) |
+| **Light** | Model not included – bring your own | 🔗 [Baidu Netdisk (Light)](https://pan.baidu.com/s/1eN4mhNKk7DEcPbtmnP-R1g?pwd=nu9u) |
+
+🔑 Extraction Code: `nu9u`
 
 ---
 
-## 💡 致谢
+## ⚙️ Usage
 
-- [MinerU](https://github.com/opendatalab/MinerU)：强大的 PDF 结构化解析引擎  
-- [Playwright](https://playwright.dev/)：可靠的浏览器自动化工具  
-- [MathJax](https://www.mathjax.org/)：高质量数学公式渲染  
-- [llama.cpp](https://github.com/ggerganov/llama.cpp)：高效的本地 LLM 推理框架  
-- 腾讯混元团队：开源 [HunYuan-MT 系列翻译模型](https://hunyuan.tencent.com/)
+1. Extract the archive and double-click `run.bat` to launch the GUI.
+2. In settings, choose:
+   - **PDF Parsing Mode**: `txt` / `ocr` / `vlm`
+   - **Translation Backend**: Cloud API or Local Model (recommended: `Hunyuan-MT-7B.Q4_K_S.gguf`)
+3. Select a PDF file and click “Start Translation”.
+
+> 📌 The Full version auto-loads the model on first run—no extra setup needed.
+
+---
+
+## 🎯 Ideal Use Cases
+
+- High-quality translation of academic papers & technical docs (preserving formulas/figures)  
+- Bilingual processing of scanned contracts or reports  
+- Offline, high-fidelity localization without internet  
+- Automated document translation pipelines (with resume-on-failure support)
+
+---
+
+## 🧱 Architecture Highlights
+
+- **Pipeline-Based Async Design**: 7 stages decoupled via `asyncio.Queue`, enabling concurrency and fault isolation.  
+- **Modular Components**: Each function (PDF prep, MinerU parsing, translation, overlay, rendering, PDF conversion, merging) is an independent module.  
+- **Fault Tolerance**: Successfully processed files are skipped; single chunk failure won’t halt the entire job.  
+- **Logging**: Detailed execution logs via `loguru` for easy debugging.
+
+---
+
+## 💡 Acknowledgements
+
+- [MinerU](https://github.com/opendatalab/MinerU): Powerful PDF structural parser  
+- [Playwright](https://playwright.dev/): Reliable browser automation  
+- [MathJax](https://www.mathjax.org/): High-quality math rendering  
+- [llama.cpp](https://github.com/ggerganov/llama.cpp): Efficient local LLM inference  
+- Tencent HunYuan Team: Open-sourced [HunYuan-MT translation models](https://hunyuan.tencent.com/)
