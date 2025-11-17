@@ -99,6 +99,7 @@
 git clone https://github.com/Neo-Dumas/Neo-DumasTrans.git
 cd Neo-DumasTrans
 pip install -r requirements.txt
+playwright install chromium
 ```
 ---
 
