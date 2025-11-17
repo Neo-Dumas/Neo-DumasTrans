@@ -28,7 +28,7 @@ class OcrSettingsWidget:
 
         self.mineru_api_key_edit = QLineEdit()
         self.mineru_api_key_edit.setObjectName("mineruApiKeyEdit")  # ← 关键
-        self.mineru_api_key_edit.setPlaceholderText("请输入 MinerU OCR 的 API Token（Enter MinerU OCR API Token）")
+        self.mineru_api_key_edit.setPlaceholderText("请输入 MinerU OCR 的 API Token")
         self.mineru_api_key_edit.setEchoMode(QLineEdit.Password)
 
         self.show_mineru_api_checkbox = QCheckBox("显示（Show）")

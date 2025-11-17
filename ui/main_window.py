@@ -9,7 +9,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Neo-Dumas Trans")
-        self.resize(1920, 1080)
+        self.resize(1280, 720)
 
         # 创建 UI 组件
         self.ui = PdfTranslationUI(self)
@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
         size = self.frameGeometry()
 
         x = (screen.width() - size.width()) // 2 + screen.x()
-        y = (screen.height() - size.height()) // 2 + screen.y() - 50
-        y = max(y, 10)
+        y = (screen.height() - size.height()) // 2 + screen.y() - 150
+        y = max(y, 0)
 
         self.move(x, y)

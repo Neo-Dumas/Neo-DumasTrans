@@ -272,37 +272,3 @@ QLabel ~ QPushButton {
 QLineEdit, QComboBox {
     max-width: 300px;
 }
-
-
-/* ========== 社交媒体图标 ========== */
-
-#socialWidget {
-    /* 容器本身不设宽高，由子元素和布局决定 */
-    background: transparent;
-}
-
-QPushButton#socialButton {
-    /* 关键：让按钮尺寸完全由图标和 padding 决定 */
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    max-width: 32px;
-    min-height: 32px;
-    max-height: 32px;
-    
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 8;
-    
-    /* 确保图标居中填充 */
-    qproperty-iconSize: 32px 32px;
-}
-
-QPushButton#socialButton:hover {
-    /* 可选：悬停时加一点反馈 */
-    transform: scale(1.1); /* 注意：QSS 不支持 transform！需用其他方式 */
-    /* 替代方案：改变背景或边框 */
-    background-color: rgba(74, 105, 189, 0.1);
-    border-radius: 4px;
-}

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Optional
 from loguru import logger
 from pypdf import PdfReader, PdfWriter
-
+from .pdf_preprocessor import preprocess_and_split_pdf
 # 各模块导入（保持原函数不变）
 from .mineru_engine import run_single_pdf
 from .split_json_extractor import extract_leaf_blocks_from_file
@@ -38,33 +38,26 @@ async def stage_splitter(
     pdf_type: str
 ):
     """
-    Stage 1: 分割 PDF，每生成一个 chunk 就发送消息。
+    Stage 1: 调用专用预处理+分割模块，发送每个 chunk。
     """
-    chunks_dir = workdir / "chunks"
-    chunks_dir.mkdir(exist_ok=True)
-    reader = PdfReader(str(pdf_path))
-    total_pages = len(reader.pages)
-    base_name = pdf_path.stem
+    # ✅ 核心逻辑全部委托给新模块
+    loop = asyncio.get_running_loop()
+    chunk_paths = await loop.run_in_executor(
+        None,
+        preprocess_and_split_pdf,
+        pdf_path,
+        workdir,
+        chunk_size
+    )
 
-    for i in range(0, total_pages, chunk_size):
-        start = i
-        end = min(i + chunk_size, total_pages)
-        chunk_file = chunks_dir / f"{base_name}_part_{(i // chunk_size) + 1:03d}.pdf"
-
-        if not chunk_file.exists():
-            writer = PdfWriter()
-            for page_idx in range(start, end):
-                writer.add_page(reader.pages[page_idx])
-            with open(chunk_file, "wb") as f:
-                writer.write(f)
-
-        msg = PipelineMessage(chunk_file)
+    # 发送每个 chunk 到下游
+    for chunk_path in chunk_paths:
+        msg = PipelineMessage(chunk_path)
         msg.pdf_type = pdf_type
         await output_queue.put(msg)
-        logger.info(f"✂️ 分割完成: {chunk_file.name}")
 
     logger.info("✅ 分割阶段完成")
-    await output_queue.put(None)  # 发送结束信号
+    await output_queue.put(None)  # 结束信号
 
 
 async def stage_mineru_processor(
