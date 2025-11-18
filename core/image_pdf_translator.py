@@ -1,5 +1,6 @@
 # core/image_pdf_translator.py
-
+import os 
+import subprocess
 import asyncio
 from pathlib import Path
 from typing import Optional
@@ -60,72 +61,100 @@ async def stage_splitter(
     await output_queue.put(None)  # 结束信号
 
 
+# 硬编码 MinerU API 可执行文件的相对路径（相对于项目根目录）
+MINERU_API_EXE = "python-3.10.11/Scripts/mineru-api.exe"
+
 async def stage_mineru_processor(
     input_queue: asyncio.Queue,
     output_queue: asyncio.Queue,
     mineru_output_dir: Path,
     pdf_type: str,
     concurrency: int,
-    mineru_api_key = None,
-    mineru_base_url= None,
+    mineru_api_key=None,
+    mineru_base_url=None,
 ):
-    """
-    Stage 2: 并发运行 MinerU，处理每个 chunk。
-    """
-    semaphore = asyncio.Semaphore(concurrency)
-    running_tasks = []
-    end_signal_received = False
+    api_process = None
 
-    async def process(msg: PipelineMessage):
-        async with semaphore:
-            try:
-                # 使用线程池执行耗时的同步函数
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(
-                    None,
-                    run_single_pdf,
-                    str(msg.chunk_path),
-                    str(mineru_output_dir),
-                    str(pdf_type),                    
-                    str(mineru_api_key),
-                    str(mineru_base_url),  
-                )
+    if pdf_type in ("txt", "ocr"):
+        exe_path = Path(MINERU_API_EXE)
+        if not exe_path.exists():
+            logger.error(f"❌ MinerU API 可执行文件不存在: {exe_path.absolute()}")
+            await output_queue.put(None)
+            return
 
-                if not result.get("success"):
-                    msg.error = f"MinerU failed: {result.get('error', 'Unknown error')}"
-                    logger.error(f"❌ MinerU 失败: {msg.chunk_path.name} | {msg.error}")
-                    return
+        logger.info("🚀 启动 MinerU API 服务 (强制使用 CPU)...")
 
-                msg.mineru_output = result
-                await output_queue.put(msg)
-                logger.info(f"✅ MinerU 完成: {msg.chunk_path.name}")
+        # === 关键修改：复制当前环境并设置 MINERU_DEVICE_MODE=cpu ===
+        env = os.environ.copy()
+        env["MINERU_DEVICE_MODE"] = "cpu"
 
-            except Exception as e:
-                msg.error = f"MinerU exception: {e}"
-                logger.error(f"❌ MinerU 异常: {msg.chunk_path.name} | {e}")
-            finally:
+        api_process = subprocess.Popen([
+            str(exe_path), "--host", "127.0.0.1", "--port", "8000"
+        ], env=env)  # ← 传入 env 参数
+
+        await asyncio.sleep(5)
+
+    try:
+        semaphore = asyncio.Semaphore(concurrency)
+        running_tasks = []
+        end_signal_received = False
+
+        async def process(msg: PipelineMessage):
+            async with semaphore:
+                try:
+                    loop = asyncio.get_running_loop()
+                    result = await loop.run_in_executor(
+                        None,
+                        run_single_pdf,
+                        str(msg.chunk_path),
+                        str(mineru_output_dir),
+                        str(pdf_type),                    
+                        str(mineru_api_key),
+                        str(mineru_base_url),  
+                    )
+
+                    if not result.get("success"):
+                        msg.error = f"MinerU failed: {result.get('error', 'Unknown error')}"
+                        logger.error(f"❌ MinerU 失败: {msg.chunk_path.name} | {msg.error}")
+                        return
+
+                    msg.mineru_output = result
+                    await output_queue.put(msg)
+                    logger.info(f"✅ MinerU 完成: {msg.chunk_path.name}")
+
+                except Exception as e:
+                    msg.error = f"MinerU exception: {e}"
+                    logger.error(f"❌ MinerU 异常: {msg.chunk_path.name} | {e}")
+                finally:
+                    input_queue.task_done()
+
+        while not end_signal_received:
+            msg = await input_queue.get()
+            if msg is None:
                 input_queue.task_done()
+                end_signal_received = True
+                break
+            task = asyncio.create_task(process(msg))
+            running_tasks.append(task)
 
-    # Step 1: 消费 input_queue，创建任务
-    while not end_signal_received:
-        msg = await input_queue.get()
-        if msg is None:
-            input_queue.task_done()
-            end_signal_received = True
-            break
-        task = asyncio.create_task(process(msg))
-        running_tasks.append(task)
+        await input_queue.join()
 
-    # Step 2: 等待所有消息处理完成（所有 task 启动完毕）
-    await input_queue.join()
+        if running_tasks:
+            await asyncio.gather(*running_tasks, return_exceptions=True)
 
-    # Step 3: 等待所有已创建的任务真正执行完毕
-    if running_tasks:
-        await asyncio.gather(*running_tasks, return_exceptions=True)
+        await output_queue.put(None)
+        logger.info("✅ MinerU 处理阶段完成")
 
-    # Step 4: 发送结束信号
-    await output_queue.put(None)
-    logger.info("✅ MinerU 处理阶段完成")
+    finally:
+        # === 关闭 API（如果启动了）===
+        if api_process is not None:
+            logger.info("🛑 关闭 MinerU API 服务...")
+            api_process.terminate()
+            try:
+                api_process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                api_process.kill()
+                logger.warning("⚠️ MinerU API 进程强制终止")
 
 
 async def stage_leaf_extractor(

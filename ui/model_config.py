@@ -134,8 +134,12 @@ class ModelConfigWidget:
 
         main_layout.addWidget(self.local_widget)
 
-        # === 并发数量（公共）===
-        concurrent_layout = QHBoxLayout()
+        # === 并发数量（仅云端模式）===
+        self.concurrent_widget = QWidget()
+        self.concurrent_widget.setObjectName("concurrentWidget")
+        concurrent_layout = QHBoxLayout(self.concurrent_widget)
+        concurrent_layout.setContentsMargins(0, 0, 0, 0)
+
         concurrent_label = QLabel("并发数量（Concurrency）:")
         concurrent_label.setObjectName("concurrencyLabel")
         self.max_concurrent_translate_spinbox = QSpinBox()
@@ -143,10 +147,12 @@ class ModelConfigWidget:
         self.max_concurrent_translate_spinbox.setMinimum(1)
         self.max_concurrent_translate_spinbox.setMaximum(20)
         self.max_concurrent_translate_spinbox.setValue(5)
+
         concurrent_layout.addWidget(concurrent_label)
         concurrent_layout.addWidget(self.max_concurrent_translate_spinbox)
         concurrent_layout.addStretch()
-        main_layout.addLayout(concurrent_layout)
+
+        main_layout.addWidget(self.concurrent_widget)
 
         # 初始化显示状态
         self._switch_mode_ui("cloud")
@@ -174,6 +180,8 @@ class ModelConfigWidget:
         is_local = (mode == "local")
         self.cloud_widget.setVisible(not is_local)
         self.local_widget.setVisible(is_local)
+        # 并发设置仅在云端模式显示
+        self.concurrent_widget.setVisible(not is_local)
 
     def on_run_mode_changed(self):
         mode = self.run_mode_combo.currentData()
