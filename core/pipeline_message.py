@@ -1,3 +1,5 @@
+# core/pipeline_message.py
+
 from pathlib import Path
 from typing import Optional
 
@@ -13,3 +15,5 @@ class PipelineMessage:
         self.pdf_path: Optional[Path] = None
         self.censored_pdf_path: Optional[Path] = None
         self.error: Optional[str] = None
+        # 新增：记录整个 PDF 被分割成多少个 chunk（所有消息共享同一值）
+        self.total_chunks: Optional[int] = None
