@@ -1,3 +1,5 @@
+#core\stages\translator.py
+
 import asyncio
 from pathlib import Path
 from loguru import logger

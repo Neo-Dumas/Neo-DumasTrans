@@ -11,14 +11,14 @@ def merge_vertical_blocks(
     - 相邻块同 type 和 bbox1
     额外处理：
     - 删除 type 为 "text" 且 content 字段为纯空白字符串（如 "  ", "\n\t " 等）的块。
-    - 类型为 "image"、"table"、"interline_equation" 的块不参与合并，单独保留。
+    - 类型为 "image"、"table"、"interline_equation"、"block_page" 的块不参与合并，单独保留。
     """
 
     if not blocks:
         return []
 
     # 定义不应合并的类型
-    NON_MERGEABLE_TYPES = {"image", "table", "interline_equation"}
+    NON_MERGEABLE_TYPES = {"image", "table", "interline_equation", "block_page"}
 
     # 过滤：仅当 type 为 "text" 且 content 是纯空白字符串时才删除
     filtered_blocks = [

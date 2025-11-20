@@ -1,5 +1,4 @@
 # core/mineru_local.py
-
 import os
 import subprocess
 import logging
@@ -7,20 +6,26 @@ import requests
 import time
 import shutil
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
 
-def _is_wsl_available():
+# ==========================
+# WSL 相关工具函数
+# ==========================
+
+def _is_wsl_available() -> bool:
+    """检测系统是否支持 WSL"""
     try:
         result = subprocess.run(["wsl", "echo", "test"], capture_output=True, text=True, timeout=10)
         return result.returncode == 0
-    except Exception:
+    except Exception as e:
+        logger.debug(f"WSL 检测失败: {e}")
         return False
 
 
 def _windows_to_wsl_path(win_path: str) -> str:
+    """将 Windows 路径转换为 WSL 路径"""
     win_path = os.path.abspath(win_path)
     if win_path.startswith("\\\\"):
         raise ValueError("UNC paths not supported in WSL")
@@ -29,10 +34,12 @@ def _windows_to_wsl_path(win_path: str) -> str:
     return f"/mnt/{drive}{tail.replace(os.sep, '/')}"
 
 
-def _run_mineru_in_wsl_to_dir(pdf_path: str, output_dir: str) -> bool:
-    """Run MinerU in WSL (VLM mode)"""
+def _run_vlm_in_wsl(pdf_path: str, output_dir: str) -> bool:
+    """在 WSL 中运行 MinerU VLM 模式"""
     if not _is_wsl_available():
+        logger.warning("WSL 不可用，无法运行 VLM 模式")
         return False
+
     try:
         wsl_pdf = _windows_to_wsl_path(pdf_path)
         wsl_out = _windows_to_wsl_path(output_dir)
@@ -51,47 +58,46 @@ def _run_mineru_in_wsl_to_dir(pdf_path: str, output_dir: str) -> bool:
             "-t", "true",
             "--device", "cuda"
         ]
-        logger.info(f"🚀 Running WSL MinerU (VLM) on {Path(pdf_path).name}")
+        logger.info(f"🚀 在 WSL 中运行 MinerU (VLM): {Path(pdf_path).name}")
         result = subprocess.run(cmd, timeout=600)
-        return result.returncode == 0
+        success = result.returncode == 0
+        if not success:
+            logger.warning(f"WSL MinerU (VLM) 返回非零状态码: {result.returncode}")
+        return success
     except Exception as e:
-        logger.warning(f"WSL MinerU (VLM) failed: {e}")
+        logger.error(f"WSL MinerU (VLM) 执行异常: {e}")
         return False
 
 
+# ==========================
+# 本地 HTTP API 相关函数
+# ==========================
+
 def _find_latest_uuid_subdir(parent: Path) -> Path:
-    """找出 parent 下最新的、非空的子目录（即 MinerU 生成的 UUID 目录）"""
+    """找出 parent 下最新的、非空的子目录（MinerU API 生成的 UUID 目录）"""
     subdirs = [d for d in parent.iterdir() if d.is_dir()]
     if not subdirs:
         raise FileNotFoundError("未找到任何子目录")
-    latest = max(subdirs, key=lambda d: d.stat().st_mtime)
-    return latest
+    return max(subdirs, key=lambda d: d.stat().st_mtime)
 
 
-def run_mineru_via_api(
+def _run_txt_or_ocr_via_local_api(
     pdf_path: str,
     output_dir: str,
-    mode: str,
+    parse_method: str,
     api_base_url: str = "http://127.0.0.1:8000"
 ) -> bool:
     """
-    使用已启动的 MinerU API 处理 PDF。
-    mode 必须是 'txt' 或 'ocr'，将直接作为 parse_method 传给 API。
+    通过本地已启动的 MinerU API 服务处理 PDF（仅支持 txt / ocr 模式）
     """
-    if mode not in ("txt", "ocr"):
-        logger.error(f"❌ 不支持的 API 模式: {mode}，仅支持 'txt' 或 'ocr'")
+    if parse_method not in ("txt", "ocr"):
+        logger.error(f"❌ 本地 API 仅支持 'txt' 或 'ocr' 模式，收到: {parse_method}")
         return False
 
     pdf_path = Path(pdf_path)
     output_root = Path(output_dir)
     target_final_dir = output_root / pdf_path.stem
-
-    # 断点续传：如果最终目标已存在，跳过
-    if target_final_dir.exists():
-        logger.info(f"⏭️ 已存在，跳过: {pdf_path.stem}")
-        return True
-
-    logger.info(f"📤 正在通过 API 处理: {pdf_path.name} (parse_method={mode})")
+    logger.info(f"📤 通过本地 API 处理: {pdf_path.name} (parse_method={parse_method})")
 
     try:
         with open(pdf_path, 'rb') as f:
@@ -99,7 +105,7 @@ def run_mineru_via_api(
             data = {
                 'output_dir': str(output_root),
                 'lang_list': ['en'],
-                'parse_method': mode,  # ✅ 根据 mode 决定 parse_method
+                'parse_method': parse_method,
                 'formula_enable': True,
                 'table_enable': True,
                 'return_md': True,
@@ -119,59 +125,74 @@ def run_mineru_via_api(
             )
 
         if response.status_code != 200:
-            logger.error(f"❌ API 返回错误 ({response.status_code}): {pdf_path.name}")
+            logger.error(f"❌ 本地 API 返回错误 ({response.status_code}): {pdf_path.name}")
             return False
 
         time.sleep(2)
 
-        # 找到刚生成的 UUID 目录
+        # 定位并移动结果目录
         uuid_dir = _find_latest_uuid_subdir(output_root)
-        logger.debug(f"📁 找到 UUID 目录: {uuid_dir.name}")
+        logger.debug(f"📁 找到临时 UUID 目录: {uuid_dir.name}")
 
-        # 进入 UUID 目录，找内容子目录
-        expected_content_dir = uuid_dir / pdf_path.stem
-        if not expected_content_dir.exists():
-            candidates = [d for d in uuid_dir.iterdir() if d.is_dir() and d.name != uuid_dir.name]
-            if not candidates:
-                raise RuntimeError(f"未在 {uuid_dir} 中找到内容目录")
-            expected_content_dir = candidates[0]
+        # 遍历 UUID 目录下的所有子目录（通常只有一个：<pdf_stem>）
+        for content_parent in uuid_dir.iterdir():
+            if not content_parent.is_dir():
+                continue
 
-        # 移动到目标位置
-        shutil.move(str(expected_content_dir), str(target_final_dir))
-        logger.info(f"✅ 提取成功: {target_final_dir}")
+            target_dir = output_root / content_parent.name  # e.g., output_root/俄文第一页_part_001
+            target_dir.mkdir(parents=True, exist_ok=True)
 
-        # 清理 UUID 目录
+            # 将 content_parent 下的所有子项（txt/, ocr/, images/ 等）合并到 target_dir
+            for item in content_parent.iterdir():
+                dest_item = target_dir / item.name
+                if item.is_dir():
+                    if dest_item.exists():
+                        # 已存在同名目录 → 递归合并（这里简化为：先删后移，或更安全地 shutil.copytree + dirs_exist_ok）
+                        logger.debug(f"🔄 合并目录: {item} -> {dest_item}")
+                        # Python 3.8+ 支持 dirs_exist_ok
+                        shutil.copytree(item, dest_item, dirs_exist_ok=True)
+                        shutil.rmtree(item)  # 清理源
+                    else:
+                        shutil.move(str(item), str(dest_item))
+                else:
+                    # 处理文件（如有）
+                    if dest_item.exists():
+                        dest_item.unlink()
+                    shutil.move(str(item), str(dest_item))
+
+        logger.info(f"✅ 提取成功: {output_root}")
+
+        # 清理临时 UUID 目录（此时应为空或可安全删除）
         shutil.rmtree(uuid_dir, ignore_errors=True)
         return True
 
     except Exception as e:
-        logger.error(f"💥 API 处理异常: {pdf_path.name} - {e}")
+        logger.error(f"💥 本地 API 处理异常: {pdf_path.name} - {e}")
         return False
 
 
-def detect_mode() -> str:
-    """Detect available mode: 'vlm' if WSL available, else 'txt'"""
-    return "vlm" if _is_wsl_available() else "txt"
-
+# ==========================
+# 公共接口
+# ==========================
 
 def run_local(
     pdf_path: str,
     output_dir: str,
     mode: str,
-    mineru_api_key: Optional[str] = None,   # 保留参数签名以兼容调用方
-    mineru_base_url: Optional[str] = None
+    # 注意：以下两个参数保留以兼容调用方，但本地模式不使用它们
+    mineru_api_key: str = None,     # noqa: ARG001
+    mineru_base_url: str = None     # noqa: ARG001
 ) -> bool:
     """
-    Run local MinerU in specified mode:
-      - 'vlm': use WSL command line (GPU VLM engine, unchanged)
-      - 'txt' or 'ocr': use already-running MinerU API via HTTP
+    根据指定模式运行本地 MinerU：
+      - 'vlm': 通过 WSL 命令行调用（GPU VLM）
+      - 'txt' / 'ocr': 通过本地已启动的 HTTP API 服务处理
     """
-    base_url = mineru_base_url or "http://127.0.0.1:8000"
-
     if mode == "vlm":
-        return _run_mineru_in_wsl_to_dir(pdf_path, output_dir)
+        return _run_vlm_in_wsl(pdf_path, output_dir)
     elif mode in ("txt", "ocr"):
-        return run_mineru_via_api(pdf_path, output_dir, mode, api_base_url=base_url)
+        base_url = mineru_base_url or "http://127.0.0.1:8000"
+        return _run_txt_or_ocr_via_local_api(pdf_path, output_dir, mode, base_url)
     else:
-        logger.error(f"Unsupported local mode: {mode}")
+        logger.error(f"❌ 不支持的本地模式: {mode}")
         return False

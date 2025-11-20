@@ -36,7 +36,7 @@ def get_local_model(model_path: str):
     try:
         _LOCAL_MODEL_INSTANCE = Llama(
             model_path=str(resolved_path),
-            n_ctx=4096,
+            n_ctx=2048,
             n_threads=8,
             n_gpu_layers=50,
             verbose=False

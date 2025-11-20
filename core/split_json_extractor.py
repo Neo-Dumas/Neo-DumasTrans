@@ -6,8 +6,10 @@ from pathlib import Path
 from typing import Any, List, Dict, Optional, Union  # ✅ 确保包含 Union
 
 from .block_merger import merge_vertical_blocks  # <-- 新增导入
-from pathlib import Path
+import logging
 
+# 配置日志（可选：在主程序中统一配置）
+logger = logging.getLogger(__name__)
 
 
 def is_bbox_like(obj: Any) -> bool:
@@ -76,8 +78,7 @@ def extract_leaf_bbox_blocks(
 
         is_leaf_level = not has_nested
 
-        # ====== 关键修正：检查节点自身的页面信息 ======
-        # 判断节点自身是否有 page_idx（不是从上下文继承的）
+        # ====== 保留：检查节点自身的页面信息（用于上下文注入）======
         has_own_page_idx = "page_idx" in obj
         has_own_page_size = (
             "page_size" in obj and 
@@ -92,19 +93,18 @@ def extract_leaf_bbox_blocks(
                 "page_size": obj["page_size"][:2]
             })
 
-        # ====== 判定逻辑 ======
+        # ====== 判定逻辑：仅保留标准叶节点条件，删除空白页特殊提取 ======
         should_extract = False
         
         if is_leaf_level:
-            # 情况1：节点自身有 page_idx → 空白页，直接提取
-            if has_own_page_idx:
-                should_extract = True
-            # 情况2：节点自身无 page_idx → 必须满足标准条件
-            else:
-                should_extract = (
-                    isinstance(current_type, str) and 
-                    has_valid_bbox
-                )
+            # 删除了以下这行：
+            # if has_own_page_idx:
+            #     should_extract = True
+            # 改为：只按标准条件提取
+            should_extract = (
+                isinstance(current_type, str) and 
+                has_valid_bbox
+            )
 
         if should_extract:
             extracted = dict(obj)
@@ -155,19 +155,16 @@ def extract_leaf_blocks_from_file(
     """
     从 middle.json 文件中提取最终的 leaf blocks，并输出为 {原文件名}_leaf_blocks.json。
     
-    支持的 pdf_type 取值及行为：
-        - "txt" 或 "ocr"：
-            - 删除所有页面中的 'para_blocks' 字段（因其为中间段落结果，不应参与 leaf 提取）；
-            - 对提取出的 leaf blocks 执行垂直合并后处理。
-        - "vlm"：
-            - 保留所有字段（包括 para_blocks），因为 VLM 模式依赖完整结构信息；
-            - 不执行垂直块合并。
-        - 其他值（如 None、未知类型）：
-            - 视为异常输入，按 "vlm" 保守处理（保留字段 + 不合并），并打印警告。
-
-    后续所有处理均基于过滤后的数据进行。
-    """
+    改进点：
+        - 显式为每一页生成 block_page 块（基于 pdf_info 中的一级页面对象）
+        - 叶级内容块通过 extract_leaf_bbox_blocks 提取（仅含有效内容）
+        - 两者合并，确保页码完整、结构鲁棒
     
+    pdf_type 行为：
+        - "txt"/"ocr": 清理 para_blocks + 垂直合并内容块（跳过 block_page）
+        - "vlm": 保留所有字段，不合并
+        - 其他: 警告，按 vlm 处理
+    """
     json_path = Path(json_path)
     if not json_path.exists():
         return False
@@ -177,62 +174,67 @@ def extract_leaf_blocks_from_file(
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # 2. 根据 pdf_type 决定是否清理 para_blocks
+        # 2. 根据 pdf_type 决定是否清理 para_blocks（保持原逻辑）
         if pdf_type in ("txt", "ocr"):
-            # 清理 para_blocks：这些类型不需要段落级中间结果
             pdf_info = data.get("pdf_info", [])
             if isinstance(pdf_info, list):
                 for page in pdf_info:
                     if isinstance(page, dict):
                         page.pop("para_blocks", None)
         elif pdf_type == "vlm":
-            # VLM 模式：保留所有字段，不做任何清理
             pass
         else:
-            # 非预期类型（如 None、""、"unknown" 等）
-            # 保守起见，按 VLM 行为处理，但记录警告
             print(f"Warning: Unexpected pdf_type={pdf_type!r} for {json_path}. "
-                  f"Treated as 'vlm' (no para_blocks removal, no vertical merge).")
+                  f"Treated as 'vlm'.")
 
-        # 3. 提取 leaf blocks（基于可能已清理的数据）
-        leaf_blocks = extract_leaf_bbox_blocks(data)
-        if not leaf_blocks:
-            return False
+        # === Step A: 显式提取所有页面元信息，生成 block_page 块 ===
+        page_blocks = []
+        pdf_info = data.get("pdf_info", [])
+        if isinstance(pdf_info, list):
+            for page_obj in pdf_info:
+                if not isinstance(page_obj, dict):
+                    continue
+                page_idx = page_obj.get("page_idx")
+                page_size = page_obj.get("page_size")
+                
+                
+                if (
+                    isinstance(page_idx, int) and
+                    isinstance(page_size, (list, tuple)) and
+                    len(page_size) >= 2 and
+                    all(isinstance(x, (int, float)) and x >= 0 for x in page_size[:2])
+                ):
+                    width, height = page_size[0], page_size[1]
+                    page_blocks.append({
+                        "page_idx": page_idx,
+                        "page_size": [width, height],
+                        "page_number": page_idx + 1,
+                        "bbox": [0, 0, width, height],
+                        "bbox1": [0, 0, width, height], 
+                        "type": "block_page",
+                        "type1": "block_page",
+                        "type2": "block_page",
+                        "type3": "block_page"
+                    })
 
-        # 4. 仅对 txt/ocr 类型执行垂直块合并
+        # === Step B: 使用修正后的 extract_leaf_bbox_blocks 提取内容叶块 ===
+        # 此函数不再因 page_idx 提取空白页，但会正确传递 page_number 给子块
+        leaf_content_blocks = extract_leaf_bbox_blocks(data)
+
+        # === Step C: 合并页面块与内容块 ===
+        leaf_blocks = page_blocks + leaf_content_blocks
+
+        # 4. 对 txt/ocr 类型执行垂直合并（建议 merge_vertical_blocks 跳过 block_page）
         if pdf_type in ("txt", "ocr"):
             leaf_blocks = merge_vertical_blocks(leaf_blocks)
 
-        # 5. 处理整页块
-        processed_blocks = []
-        for block in leaf_blocks:
-            if "page_idx" in block:
-                page_size = block.get("page_size")
-                if (
-                    isinstance(page_size, (list, tuple))
-                    and len(page_size) == 2
-                    and all(isinstance(x, (int, float)) and x >= 0 for x in page_size)
-                ):
-                    width, height = page_size
-                    block["bbox"] = [0, 0, width, height]
-                else:
-                    block["bbox"] = None
-
-                block["type"] = "block_page"
-                block["type1"] = "block_page"
-                block["type2"] = "block_page"
-                block["type3"] = "block_page"
-
-            processed_blocks.append(block)
-        leaf_blocks = processed_blocks
-
-        # 6. 过滤无效 bbox 块
+        # 5. 过滤 bbox 为 None 的块（主要是无效内容块，block_page 已保证有效）
         leaf_blocks = [
             block for block in leaf_blocks
             if not ("bbox" in block and block["bbox"] is None)
         ]
 
-        # 7. 输出结果
+        # 6. 输出
         base_name = json_path.stem.removesuffix("_middle")
         output_path = json_path.parent / f"{base_name}_leaf_blocks.json"
         with open(output_path, "w", encoding="utf-8") as f_out:

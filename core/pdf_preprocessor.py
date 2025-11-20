@@ -1,96 +1,87 @@
 # core/pdf_preprocessor.py
 
-import fitz  # PyMuPDF
+import subprocess
+import platform
 from pathlib import Path
 from loguru import logger
 import time
+import fitz  # PyMuPDF
 
-
-def normalize_and_align_boxes(input_path: Path, output_path: Path):
-    logger.info(f"🔍 [normalize] 开始处理输入文件: {input_path}")
+def rotate_pages_to_upright(input_path: Path, output_path: Path):
+    """
+    使用 Ghostscript 将 PDF 标准化为：
+      - rotation = 0（内容 upright）
+      - MediaBox = [0, 0, w, h]
+      - CropBox 被对齐到 (0, 0)
+      - 无负坐标、无偏移、无多余小数
+      - 保留矢量内容（文字可选）
+    """
+    logger.info(f"🔄 [standardize] 开始标准化 PDF: {input_path}")
     logger.info(f"📤 输出路径: {output_path}")
 
-    open_start = time.time()
+    # === 自动定位 Ghostscript ===
+    if platform.system() == "Windows":
+        gs_candidates = ["gswin64c.exe", "gswin64.exe", "gs.exe"]
+        gs_path = None
+        for exe in gs_candidates:
+            try:
+                result = subprocess.run([exe, "-v"], capture_output=True, text=True, timeout=10)
+                if result.returncode == 0 and "Ghostscript" in result.stdout:
+                    gs_path = exe
+                    break
+            except (FileNotFoundError, subprocess.TimeoutExpired):
+                continue
+
+        if gs_path is None:
+            local_gs = Path("gs10.06.0/bin/gswin64c.exe")
+            if local_gs.exists():
+                gs_path = str(local_gs.resolve())
+                logger.info(f"📦 [standardize] 使用本地 Ghostscript: {gs_path}")
+            else:
+                raise RuntimeError(
+                    "未找到 Ghostscript。请确保 gswin64c.exe 在系统 PATH 中，"
+                    "或将其放在项目目录的 gs10.06.0/bin/ 下。"
+                )
+    else:
+        gs_path = "gs"
+
+    # === 构建 Ghostscript 命令 ===
+    cmd = [
+        gs_path,
+        "-q",
+        "-dNOPAUSE",
+        "-dBATCH",
+        "-sDEVICE=pdfwrite",
+        "-dAutoRotatePages=/PageByPage",   # 自动 upright 内容，rotation=0
+        "-dUseCropBox=true",               # 以 CropBox 为准，并平移到 (0,0)
+        "-dPDFSETTINGS=/prepress",         # 高质量，保留矢量
+        "-dEmbedAllFonts=true",
+        "-dSubsetFonts=true",
+        "-dColorImageDownsampleType=/Bicubic",
+        "-dColorImageResolution=300",
+        "-dGrayImageResolution=300",
+        "-dMonoImageResolution=300",
+        f"-sOutputFile={output_path}",
+        str(input_path),
+    ]
+
+    logger.debug(f"⚙️ [standardize] 执行命令: {' '.join(cmd)}")
+
+    # === 调用 Ghostscript ===
     try:
-        doc = fitz.open(str(input_path))
-        open_dur = time.time() - open_start
-        logger.info(f"✅ [normalize] PDF 打开成功，耗时: {open_dur:.3f}s")
+        start_time = time.time()
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+        duration = time.time() - start_time
+
+        if result.returncode != 0:
+            logger.error(f"❌ Ghostscript 失败 (exit {result.returncode}):\n{result.stderr}")
+            raise RuntimeError(f"Ghostscript 标准化失败: {result.stderr.strip()}")
+        else:
+            logger.info(f"✅ [standardize] 成功生成标准化 PDF，耗时: {duration:.2f}s")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("Ghostscript 处理超时（>600秒）")
     except Exception as e:
-        logger.error(f"❌ [normalize] 打开 PDF 失败: {e}")
-        raise
-
-    total_pages = len(doc)
-    logger.info(f"📊 [normalize] 文档总页数: {total_pages}")
-
-    for page_num in range(total_pages):
-        logger.info(f"\n{'='*70}")
-        logger.info(f"📖 [normalize] 正在处理第 {page_num + 1}/{total_pages} 页")
-
-        load_start = time.time()
-        try:
-            page = doc.load_page(page_num)
-            load_dur = time.time() - load_start
-            logger.info(f"✅ [normalize] 页面加载成功，耗时: {load_dur:.3f}s")
-        except Exception as e:
-            logger.error(f"❌ [normalize] 加载第 {page_num + 1} 页失败: {e}")
-            continue
-
-        # 获取原始 mediabox
-        mb = page.mediabox
-        x0, y0, x1, y1 = float(mb.x0), float(mb.y0), float(mb.x1), float(mb.y1)
-        width, height = x1 - x0, y1 - y0
-        logger.info(f"📦 [normalize] 原始 MediaBox: [{x0:.6f}, {y0:.6f}, {x1:.6f}, {y1:.6f}]")
-        logger.info(f"📏 [normalize] 计算尺寸: w={width:.3f}, h={height:.3f}")
-
-        # 防御性修复
-        if width <= 0:
-            width = 1.0
-            logger.warning(f"⚠️ [normalize] 第 {page_num + 1} 页宽度无效，重置为 1")
-        if height <= 0:
-            height = 1.0
-            logger.warning(f"⚠️ [normalize] 第 {page_num + 1} 页高度无效，重置为 1")
-
-        # === 关键操作 1: set_mediabox ===
-        logger.info(f"🔧 [normalize] 准备设置 MediaBox 为 [0, 0, {width:.3f}, {height:.3f}]")
-        try:
-            set_mb_start = time.time()
-            page.set_mediabox(fitz.Rect(0, 0, width, height))
-            set_mb_dur = time.time() - set_mb_start
-            logger.info(f"✅ [normalize] set_mediabox 成功，耗时: {set_mb_dur:.3f}s")
-        except Exception as e:
-            logger.error(f"💥 [normalize] set_mediabox 失败 (页 {page_num + 1}): {e}")
-            continue
-
-        # === 关键操作 2: set_cropbox ===
-        logger.info(f"🔧 [normalize] 准备设置 CropBox = MediaBox")
-        try:
-            set_cb_start = time.time()
-            page.set_cropbox(fitz.Rect(0, 0, width, height))
-            set_cb_dur = time.time() - set_cb_start
-            logger.info(f"✅ [normalize] set_cropbox 成功，耗时: {set_cb_dur:.3f}s")
-        except Exception as e:
-            logger.error(f"💥 [normalize] set_cropbox 失败 (页 {page_num + 1}): {e}")
-            continue
-
-        logger.info(f"🎉 [normalize] 第 {page_num + 1} 页处理完成")
-
-    # === 保存阶段 ===
-    logger.info(f"\n💾 [normalize] 准备保存处理后的 PDF 到 {output_path}")
-    try:
-        save_start = time.time()
-        doc.save(str(output_path), garbage=4, deflate=True)
-        save_dur = time.time() - save_start
-        logger.info(f"✅ [normalize] 保存成功，耗时: {save_dur:.3f}s")
-    except Exception as e:
-        logger.error(f"❌ [normalize] 保存失败: {e}")
-        raise
-    finally:
-        close_start = time.time()
-        doc.close()
-        close_dur = time.time() - close_start
-        logger.info(f"🔒 [normalize] 文档已关闭，耗时: {close_dur:.3f}s")
-
-    logger.info(f"✅ [normalize] 全流程完成")
+        raise RuntimeError(f"调用 Ghostscript 时出错: {e}")
 
 
 def preprocess_and_split_pdf(
@@ -106,10 +97,10 @@ def preprocess_and_split_pdf(
     processed_pdf = workdir / f"{short_name}.pdf"
     logger.info(f"⚙️ 启动预处理: {input_pdf} → {processed_pdf}")
 
-    # === 预处理阶段 ===
-    normalize_and_align_boxes(input_pdf, processed_pdf)
+    # === 标准化阶段：替换原来的 normalize_and_align_boxes ===
+    rotate_pages_to_upright(input_pdf, processed_pdf)
 
-    # === 分割阶段 ===
+    # === 分割阶段（保持不变）===
     logger.info(f"\n✂️ [split] 开始分割 PDF: {processed_pdf}")
     split_open_start = time.time()
     try:

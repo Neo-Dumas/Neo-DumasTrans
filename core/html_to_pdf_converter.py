@@ -12,8 +12,9 @@ import asyncio
 import shutil
 from pathlib import Path
 from typing import Dict, List, Tuple
-from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+from PyPDF2 import PdfMerger  # 仍用于单页合并，但最终 layer 合并改用 fitz
 from playwright.async_api import async_playwright, TimeoutError as PlaywrightTimeoutError
+import fitz  # PyMuPDF
 from loguru import logger
 
 
@@ -206,7 +207,7 @@ async def convert_single_html_to_pdf(
 
                 await page.close()
 
-                # 6. 安全合并：只取每个单页 PDF 的第一页
+                # 6. 安全合并：只取每个单页 PDF 的第一页（仍用 PyPDF2，因为只是简单拼接）
                 merger = PdfMerger()
                 for pdf_path in single_pdf_paths:
                     try:
@@ -221,36 +222,46 @@ async def convert_single_html_to_pdf(
 
                 logger.success(f"✅ 成功生成合并 PDF: {final_pdf_path}")
 
-                # >>>>>>>>>> 新增：透明PDF与涂抹PDF的合并逻辑 <<<<<<<<<<
+                # >>>>>>>>>> 新增：透明PDF与涂抹PDF的合并逻辑（改用 PyMuPDF）<<<<<<<<<<
                 try:
                     if not Path(censored_pdf_path).exists():
                         logger.warning(f"🟡 未找到对应的 _censored.pdf 文件: {censored_pdf_path}")
                         converted.append(str(final_pdf_path))  # 降级使用原始透明PDF
                     else:
-                        # 2. 检查两个PDF的页数
-                        reader_translate = PdfReader(str(final_pdf_path))
-                        reader_censored = PdfReader(str(censored_pdf_path))
+                        # 使用 PyMuPDF 打开两个 PDF
+                        doc_censored = fitz.open(str(censored_pdf_path))
+                        doc_translate = fitz.open(str(final_pdf_path))
 
-                        if len(reader_translate.pages) != len(reader_censored.pages):
-                            logger.error(f"❌ 页数不匹配！{final_pdf_path.name} 有 {len(reader_translate.pages)} 页，"
-                                    f"{censored_pdf_path} 有 {len(reader_censored.pages)} 页。跳过合并。")
+                        if len(doc_censored) != len(doc_translate):
+                            logger.error(f"❌ 页数不匹配！{final_pdf_path.name} 有 {len(doc_translate)} 页，"
+                                        f"{censored_pdf_path} 有 {len(doc_censored)} 页。跳过合并。")
                             converted.append(str(final_pdf_path))
                         else:
-                            # 3. 页数一致，进行合并：将透明翻译层叠加在涂抹层之上
                             output_pdf_path = final_pdf_path.with_name(final_pdf_path.stem + "_final.pdf")
-                            writer = PdfWriter()
+                            # 创建新文档，逐页叠加
+                            output_doc = fitz.open()
 
-                            for i in range(len(reader_censored.pages)):
-                                page_censored = reader_censored.pages[i]
-                                page_translate = reader_translate.pages[i]
-                                page_censored.merge_page(page_translate)  # 涂白层在下，翻译层在上
-                                writer.add_page(page_censored)
+                            for i in range(len(doc_censored)):
+                                # 获取底页（涂白）并复制
+                                base_page = doc_censored[i]
+                                # 创建一个与底页尺寸/旋转一致的新页
+                                new_page = output_doc.new_page(
+                                    width=base_page.rect.width,
+                                    height=base_page.rect.height
+                                )
+                                # 先绘制底页内容（包括其旋转效果）
+                                new_page.show_pdf_page(new_page.rect, doc_censored, i)
+                                # 再叠加翻译页（自动适配坐标系，尊重各自 Rotate）
+                                new_page.show_pdf_page(new_page.rect, doc_translate, i)
 
-                            with open(output_pdf_path, 'wb') as out_pdf:
-                                writer.write(out_pdf)
+                            output_doc.save(str(output_pdf_path))
+                            output_doc.close()
+                            doc_censored.close()
+                            doc_translate.close()
 
-                            logger.success(f"🎨 成功合并透明翻译层与涂抹层，输出: {output_pdf_path}")
+                            logger.success(f"🎨 成功合并透明翻译层与涂抹层（PyMuPDF），输出: {output_pdf_path}")
                             converted.append(str(output_pdf_path))
+
                 except Exception as merge_err:
                     logger.error(f"❌ 合并过程失败: {merge_err}")
                     errors.append(f"合并失败 {final_pdf_path}: {str(merge_err)}")
