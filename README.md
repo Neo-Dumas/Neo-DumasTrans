@@ -126,16 +126,22 @@ playwright install chromium
 This project builds upon several outstanding open-source tools:
 
 - [MinerU](https://github.com/opendatalab/MinerU): Structural PDF parsing with formula/table support  
-- [PyMuPDF (fitz)](https://github.com/pymupdf/PyMuPDF): High-performance PDF manipulation (AGPLv3)  
+- [PyMuPDF (fitz)](https://github.com/pymupdf/PyMuPDF): High-performance PDF manipulation  
 - [Playwright](https://playwright.dev/): Browser automation for pixel-perfect rendering  
 - [MathJax](https://www.mathjax.org/): Beautiful math typesetting  
 - [llama.cpp](https://github.com/ggerganov/llama.cpp): Efficient local LLM inference  
 - [OpenCV](https://opencv.org/): Image preprocessing for OCR workflows  
-- Tencent HunYuan Team: Open-sourced [HunYuan-MT translation models](https://hunyuan.tencent.com/)
+- [HunYuan-MT-7B](https://gitcode.com/tencent_hunyuan/Hunyuan-MT-7B-fp8): Open-source translation model by Tencent
 
-This repository also includes the following third-party binaries under their respective licenses:
-- [`qpdf`](https://github.com/qpdf/qpdf) – Apache License 2.0 (see [`third_party/qpdf-LICENSE.txt`](third_party/qpdf-LICENSE.txt))  
-- [`Ghostscript`](https://www.ghostscript.com/) – GNU AGPLv3 (see [`third_party/ghostscript-LICENSE.txt`](third_party/ghostscript-LICENSE.txt))
+The portable (green) version includes the following third-party binaries under their respective licenses:
+- [`qpdf`](https://github.com/qpdf/qpdf) – Apache License 2.0 ([LICENSE-qpdf.txt](LICENSE-qpdf.txt))  
+- [`Ghostscript`](https://www.ghostscript.com/) – GNU AGPLv3 ([LICENSE-ghostscript.txt](LICENSE-ghostscript.txt))  
+- [`PyMuPDF`](https://github.com/pymupdf/PyMuPDF) – GNU AGPLv3 ([LICENSE-pymupdf.txt](LICENSE-pymupdf.txt))  
+- [`OpenCV`](https://github.com/opencv/opencv) – Apache License 2.0 ([LICENSE-opencv.txt](LICENSE-opencv.txt))  
+- [`Playwright`](https://github.com/microsoft/playwright) – Apache License 2.0 ([LICENSE-playwright.txt](LICENSE-playwright.txt))  
+- [`llama.cpp`](https://github.com/ggerganov/llama.cpp) – MIT ([LICENSE-llamacpp.txt](LICENSE-llamacpp.txt))  
+- [`MinerU`](https://github.com/opendatalab/MinerU) – Apache License 2.0 ([LICENSE-mineru.txt](LICENSE-mineru.txt))  
+- [`HunYuan-MT-7B`](https://gitcode.com/tencent_hunyuan/HunYuan-MT-7B-fp8) – Apache License 2.0 ([LICENSE-hunyuan-mt.txt](LICENSE-hunyuan-mt.txt))
 
 ## 📄 License  
 Distributed under the AGPL-3.0 License. See [LICENSE](LICENSE) for more information.

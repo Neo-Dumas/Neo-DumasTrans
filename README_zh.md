@@ -126,16 +126,22 @@ playwright install chromium
 本项目基于多个优秀的开源工具构建：
 
 - [MinerU](https://github.com/opendatalab/MinerU)：支持公式和表格的结构化 PDF 解析  
-- [PyMuPDF (fitz)](https://github.com/pymupdf/PyMuPDF)：高性能 PDF 处理库（AGPLv3 许可证）  
+- [PyMuPDF (fitz)](https://github.com/pymupdf/PyMuPDF)：高性能 PDF 处理库  
 - [Playwright](https://playwright.dev/)：用于像素级精确渲染的浏览器自动化工具  
 - [MathJax](https://www.mathjax.org/)：高质量数学公式渲染  
 - [llama.cpp](https://github.com/ggerganov/llama.cpp)：高效的本地大语言模型推理引擎  
 - [OpenCV](https://opencv.org/)：用于 OCR 预处理的图像处理库  
-- 腾讯混元团队：开源的 [HunYuan-MT 翻译模型](https://hunyuan.tencent.com/)
+- [HunYuan-MT-7B](https://gitcode.com/tencent_hunyuan/HunYuan-MT-7B-fp8)：腾讯开源翻译模型
 
-本仓库还直接包含了以下第三方二进制文件，各自遵循其原始许可证：
-- [`qpdf`](https://github.com/qpdf/qpdf) – Apache License 2.0（见 [`third_party/qpdf-LICENSE.txt`](third_party/qpdf-LICENSE.txt)）  
-- [`Ghostscript`](https://www.ghostscript.com/) – GNU AGPLv3（见 [`third_party/ghostscript-LICENSE.txt`](third_party/ghostscript-LICENSE.txt)）
+便携版（绿色版）包含了以下第三方二进制组件，各自遵循其原始许可证：
+- [`qpdf`](https://github.com/qpdf/qpdf) – Apache License 2.0（见 [LICENSE-qpdf.txt](LICENSE-qpdf.txt)）  
+- [`Ghostscript`](https://www.ghostscript.com/) – GNU AGPLv3（见 [LICENSE-ghostscript.txt](LICENSE-ghostscript.txt)）  
+- [`PyMuPDF`](https://github.com/pymupdf/PyMuPDF) – GNU AGPLv3（见 [LICENSE-pymupdf.txt](LICENSE-pymupdf.txt)）  
+- [`OpenCV`](https://github.com/opencv/opencv) – Apache License 2.0（见 [LICENSE-opencv.txt](LICENSE-opencv.txt)）  
+- [`Playwright`](https://github.com/microsoft/playwright) – Apache License 2.0（见 [LICENSE-playwright.txt](LICENSE-playwright.txt)）  
+- [`llama.cpp`](https://github.com/ggerganov/llama.cpp) – MIT（见 [LICENSE-llamacpp.txt](LICENSE-llamacpp.txt)）  
+- [`MinerU`](https://github.com/opendatalab/MinerU) – Apache License 2.0（见 [LICENSE-mineru.txt](LICENSE-mineru.txt)）  
+- [`HunYuan-MT-7B`](https://gitcode.com/tencent_hunyuan/HunYuan-MT-7B-fp8) – Apache License 2.0（见 [LICENSE-hunyuan-mt.txt](LICENSE-hunyuan-mt.txt)）
 
 感谢这些开源项目的贡献者们，使我们能够开发出更强大的工具。
 
