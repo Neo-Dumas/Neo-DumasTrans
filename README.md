@@ -123,11 +123,19 @@ playwright install chromium
 
 ## 💡 Acknowledgements
 
-- [MinerU](https://github.com/opendatalab/MinerU): Powerful PDF structural parser  
-- [Playwright](https://playwright.dev/): Reliable browser automation  
-- [MathJax](https://www.mathjax.org/): High-quality math rendering  
+This project builds upon several outstanding open-source tools:
+
+- [MinerU](https://github.com/opendatalab/MinerU): Structural PDF parsing with formula/table support  
+- [PyMuPDF (fitz)](https://github.com/pymupdf/PyMuPDF): High-performance PDF manipulation (AGPLv3)  
+- [Playwright](https://playwright.dev/): Browser automation for pixel-perfect rendering  
+- [MathJax](https://www.mathjax.org/): Beautiful math typesetting  
 - [llama.cpp](https://github.com/ggerganov/llama.cpp): Efficient local LLM inference  
+- [OpenCV](https://opencv.org/): Image preprocessing for OCR workflows  
 - Tencent HunYuan Team: Open-sourced [HunYuan-MT translation models](https://hunyuan.tencent.com/)
+
+This repository also includes the following third-party binaries under their respective licenses:
+- [`qpdf`](https://github.com/qpdf/qpdf) – Apache License 2.0 (see [`third_party/qpdf-LICENSE.txt`](third_party/qpdf-LICENSE.txt))  
+- [`Ghostscript`](https://www.ghostscript.com/) – GNU AGPLv3 (see [`third_party/ghostscript-LICENSE.txt`](third_party/ghostscript-LICENSE.txt))
 
 ## 📄 License  
 Distributed under the AGPL-3.0 License. See [LICENSE](LICENSE) for more information.
