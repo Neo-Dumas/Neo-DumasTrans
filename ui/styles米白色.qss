@@ -1,0 +1,272 @@
+/* ui/styles.qss - 清新米黄配亮紫主题 */
+
+QMainWindow {
+    background-color: #F5F1E3; /* 柔和米黄背景 */
+    color: #444444;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+QWidget {
+    background-color: #F5F1E3;
+    color: #444444;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+/* ========== 通用基础样式 ========== */
+
+QLabel {
+    color: #444444;
+    font-size: 10pt;
+    padding-right: 8px;
+}
+
+QGroupBox {
+    border: 1px solid #D4C0A8;
+    border-radius: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: #5D4037;
+    font-weight: bold;
+    font-size: 11pt;
+    background-color: #FFF8E1;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 6px;
+    color: #5D4037;
+}
+
+QComboBox, QLineEdit, QSpinBox {
+    background-color: #FFFFFF;
+    border: 1px solid #D4C0A8;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #444444;
+    selection-background-color: #9B59B6;
+    selection-color: white;
+    font-size: 10pt;
+    min-height: 28px;
+    max-width: 300px;
+}
+
+QComboBox:focus, QLineEdit:focus, QSpinBox:focus {
+    border-color: #9B59B6;
+    outline: none;
+}
+
+QPushButton {
+    background-color: #9B59B6;
+    background-image: linear-gradient(135deg, #9B59B6, #8E44AD);
+    color: white;
+    font-weight: bold;
+    padding: 6px 14px;
+    font-size: 10pt;
+    min-height: 28px;
+    min-width: 100px;
+    max-width: 160px;
+    border-radius: 6px;
+    border: 2px solid #8E44AD;
+}
+
+QPushButton:hover {
+    background-color: #A569BD;
+    background-image: linear-gradient(135deg, #A569BD, #9B59B6);
+    border-color: #8E44AD;
+}
+
+QPushButton:pressed,
+QPushButton[translating="true"] {
+    background-color: #8E44AD;
+    background-image: none;
+    color: #E0E0E0;
+    border-color: #7D3C98;
+}
+
+QPushButton:disabled {
+    background-color: #B39EB5;
+    color: #777777;
+    border-color: #B39EB5;
+}
+
+QCheckBox {
+    spacing: 8px;
+    color: #444444;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #D4C0A8;
+    border-radius: 3px;
+    background: #FFFFFF;
+}
+
+QCheckBox::indicator:checked {
+    background: #9B59B6;
+    border-color: #9B59B6;
+}
+
+/* ========== 精细化控件样式 ========== */
+
+/* --- 主标题 --- */
+#mainTitle {
+    color: #5D4037;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 0;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* --- 开始按钮：优雅紫色渐变 --- */
+#startButton {
+    background-color: #9B59B6;
+    background-image: linear-gradient(135deg, #9B59B6, #8E44AD);
+    color: white;
+    font-weight: bold;
+    min-width: 250px;
+    max-width: 250px;
+    padding: 8px 16px;
+    font-size: 11pt;
+    border-radius: 6px;
+    border: 2px solid #8E44AD;
+}
+
+#startButton:hover {
+    background-color: #A569BD;
+    background-image: linear-gradient(135deg, #A569BD, #9B59B6);
+    border-color: #8E44AD;
+}
+
+#startButton:pressed,
+#startButton[translating="true"] {
+    background-color: #8E44AD;
+    background-image: none;
+    color: #E0E0E0;
+    border-color: #7D3C98;
+}
+
+/* --- 文件选择按钮：统一宽度，居中对齐 --- */
+#selectPdfButton, #selectOutputButton {
+    background-color: #9B59B6;
+    background-image: linear-gradient(135deg, #9B59B6, #8E44AD);
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    font-size: 10pt;
+    border-radius: 6px;
+    border: 2px solid #8E44AD;
+}
+
+#selectPdfButton:hover, #selectOutputButton:hover {
+    background-color: #A569BD;
+    background-image: linear-gradient(135deg, #A569BD, #9B59B6);
+    border-color: #8E44AD;
+}
+
+/* --- 文件路径输入框：只读，浅灰背景 --- */
+#pdfPathEdit, #outputDirEdit {
+    background-color: #FFFFFF;
+    color: #555555;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- PDF 类型下拉框 --- */
+#pdfTypeCombo {
+    min-width: 320px;
+    max-width: 320px;
+}
+
+/* --- OCR 设置区域 --- */
+#mineruApiKeyEdit {
+    min-width: 240px;
+    max-width: 365px;
+    background-color: #FFFFFF;
+}
+
+#mineruBaseUrlEdit {
+    min-width: 240px;
+    max-width: 365px;
+}
+
+#showMineruApiCheckbox {
+    color: #555555;
+}
+
+/* --- 模型配置：运行模式 & LLM 选择 --- */
+#runModeCombo, #llmCombo {
+    min-width: 260px;
+    max-width: 500px;
+}
+
+/* --- API 相关输入框 --- */
+#apiKeyEdit {
+    min-width: 280px;
+    max-width: 280px;
+    background-color: #FFFFFF;
+    border-color: #9B59B6;
+    font-family: monospace;
+}
+
+#baseUrlEdit, #modelNameEdit {
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- 本地模型路径 --- */
+#localModelPathEdit {
+    min-width: 100px;
+    max-width: 180px;
+    background-color: #FFFFFF;
+    border-color: #9B59B6;
+}
+
+#browseLocalModelButton {
+    background-color: #9B59B6;
+    background-image: linear-gradient(135deg, #9B59B6, #8E44AD);
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    font-size: 10pt;
+    border-radius: 6px;
+    border: 2px solid #8E44AD;
+}
+
+#browseLocalModelButton:hover {
+    background-color: #A569BD;
+    background-image: linear-gradient(135deg, #A569BD, #9B59B6);
+    border-color: #8E44AD;
+}
+
+/* --- 并发数量调节器 --- */
+#concurrencySpinbox {
+    min-width: 80px;
+    max-width: 80px;
+}
+
+/* ========== 布局优化：增加间距，防止拥挤 ========== */
+
+QVBoxLayout, QHBoxLayout {
+    spacing: 12px;
+}
+
+QHBoxLayout > QLabel {
+    padding-right: 8px;
+}
+
+QLabel ~ QLineEdit,
+QLabel ~ QComboBox,
+QLabel ~ QSpinBox,
+QLabel ~ QPushButton {
+    margin-left: 8px;
+}
+
+QLineEdit, QComboBox {
+    max-width: 300px;
+}

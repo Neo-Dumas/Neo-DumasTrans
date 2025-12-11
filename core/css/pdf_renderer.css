@@ -1,0 +1,279 @@
+/* core\css\pdf_renderer.css */
+/* 所有视觉样式（字体、字号）均由 Python 内联注入，CSS 仅负责布局 */
+
+/* ===== 全局页面设置：必须放在最外层，PDF 才会识别 ===== */
+@page {
+    margin: 0;
+}
+
+body {
+    background: #f0f0f0;
+    margin: 0;
+    overflow-x: auto;
+}
+
+.pdf-page {
+    position: relative;
+    background: white;
+    /* 加强贴边 */
+    margin: 0;
+    padding: 0;
+}
+
+/* ===== 基础块样式 ===== */
+.block {
+    position: absolute;
+    box-sizing: border-box;
+    line-height: 1.2;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    hyphens: auto;
+}
+
+/* ===== 代码与算法块：近乎透明 + 保留原始格式 ===== */
+.block.code,
+.block.code_body,
+.block.algorithm {
+    /* 近乎透明，用于占位 */
+    color: rgba(0, 0, 0, 0.01);
+    -webkit-text-fill-color: rgba(0, 0, 0, 0.01); /* 保持一致 */
+
+    /* 👉 关键：保留空格、缩进、换行 */
+    white-space: pre;
+    word-wrap: normal;           /* 不自动换行 */
+    overflow-wrap: normal;
+
+
+    /* 保持行高一致 */
+    line-height: 1.2;
+
+}
+
+
+/* ===== 文字块 ===== */
+.block.text {
+    overflow: visible;
+    padding: 0;
+}
+
+.block.text div,
+.block.text p,
+.block.text span {
+    display: block;
+    transform-origin: center center;
+    margin: 0;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ===== 列表块（与文字块一致） ===== */
+.block.list {
+    overflow: visible;
+    padding: 0;
+}
+
+.block.list div,
+.block.list p,
+.block.list span {
+    display: block;
+    transform-origin: center center;
+    margin: 0;
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* ===== 文本通用样式 ===== */
+.block.text p,
+.block.text div,
+.block.text span,
+.block.list p,      
+.block.list div,    
+.block.list span,   
+.block.page_number p,
+.block.header p,
+.block.footer p,
+.block.title h1,
+.block.chapter h1,
+.block.section h1,
+.block.footnote p,
+.block.caption p,
+.block.inline_equation div {
+    margin: 0;
+    white-space: normal;
+    word-break: break-word;
+    transform-origin: center center;
+}
+
+/* 标题保持粗体和居中 */
+.block.title h1,
+.block.chapter h1,
+.block.section h1 {
+    font-weight: bold;
+    line-height: 1.2;
+    text-align: center;
+}
+
+/* 页眉页脚页码保持灰色 */
+.block.header p,
+.block.footer p,
+.block.page_number p {
+    color: #666;
+    text-align: center;
+}
+
+/* 脚注保持颜色 */
+.block.footnote p {
+    color: #555;
+    line-height: 1.2;
+}
+
+/* 题注保持斜体 */
+.block.caption p {
+    color: #444;
+    font-style: italic;
+}
+
+/* 针对混合内容块的优化 */
+.block.inline_equation > div {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+    line-height: 1.2 !important;
+}
+
+/* 确保MathJax公式正确缩放 */
+.math-inline, mjx-container {
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+/* 文字内容样式 */
+.block.inline_equation {
+    overflow: visible !important;
+}
+
+/* ===== 图片 ===== */
+.block.image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* ===== 表格容器 ===== */
+.block.table {
+    overflow: visible; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    box-sizing: border-box; /* 确保尺寸计算一致 */
+}
+
+/* ===== 表格整体 ===== */
+.block.table table {
+    border-collapse: collapse;
+    table-layout: fixed;   /* 👈 关键：列宽由容器决定，非内容 */
+    width: 100%;           /* 👈 用 width 而非 max-width，更确定 */
+    margin: 0;
+    line-height: 1.0;
+}
+
+/* ===== 单元格通用样式（核心优化区）===== */
+.block.table td,
+.block.table th {
+    border: 0.05em solid #ccc;
+    padding: 0.05em 0.1em;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 1.0;
+
+    /* 👇 现代标准换行策略 */
+    white-space: normal;
+    word-break: normal;           /* 不强制断词 */
+    overflow-wrap: anywhere;      /* 👈 核心：允许任意位置断行（仅当必要）*/
+    line-break: loose;            /* 优化 CJK 换行 */
+
+    /* 👇 关键修复：解除 table-cell 默认最小宽度限制 */
+    min-width: 0;                 /* 替代 1ch，让列真正可压缩 */
+}
+
+/* ===== 表头样式 ===== */
+.block.table th {
+    font-weight: bold;
+    background-color: #f5f5f5;
+}
+
+/* ===== 公式块垂直居中 ===== */
+.block.interline_equation {
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.interline-equation {
+    text-align: center;
+    margin: 10px 0;
+}
+
+.block.inline_equation span.math,
+.block.inline_equation p,
+.block.inline_equation div {
+    font-style: italic;
+}
+
+/* ===== MathJax 公式布局修正 ===== */
+mjx-container {
+    display: inline-block !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+
+.block.inline_equation mjx-container {
+    display: inline-block !important;
+    white-space: normal !important;
+    max-width: 100% !important;
+    line-height: 1.2 !important;
+}
+
+.block.inline_equation {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+}
+
+mjx-container[jax="SVG"] {
+    white-space: normal !important;
+}
+
+.math-inline mjx-container,
+.block.inline_equation mjx-container {
+    max-width: 100% !important;
+    display: inline-block !important;
+}
+
+/* ===== 打印模式优化 ===== */
+@media print {
+    body {
+        background: white !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    .pdf-page {
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}

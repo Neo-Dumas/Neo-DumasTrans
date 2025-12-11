@@ -1,0 +1,9 @@
+# 强制批处理文件使用 Windows 换行符 (CRLF)
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 可选：其他文本文件保持 LF（推荐）
+*.py text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.sh text eol=lf

@@ -1,0 +1,308 @@
+/* ui/styles.qss - 清新蓝调主题：所有按钮采用统一风格 */
+
+QMainWindow {
+    background-color: #202c39; /* 深邃背景 */
+    color: #e0e5ec;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+QWidget {
+    background-color: #202c39;
+    color: #e0e5ec;
+    font-family: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+/* ========== 通用基础样式 ========== */
+
+QLabel {
+    color: #e0e5ec;
+    font-size: 10pt;
+    padding-right: 8px; /* 为标签留出空间 */
+}
+
+QGroupBox {
+    border: 1px solid #3a4b5e;
+    border-radius: 6px;
+    margin-top: 12px;
+    padding-top: 12px;
+    padding-bottom: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+    color: #cad2d3;
+    font-weight: bold;
+    font-size: 11pt;
+    background-color: #1a2430;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 10px;
+    padding: 0 6px;
+    color: #cad2d3;
+}
+
+QComboBox, QLineEdit, QSpinBox {
+    background-color: #273444;
+    border: 1px solid #3a4b5e;
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: #e0e5ec;
+    selection-background-color: #4a69bd;
+    selection-color: white;
+    font-size: 10pt;
+    min-height: 28px;
+    max-width: 300px;
+}
+
+QComboBox:focus, QLineEdit:focus, QSpinBox:focus {
+    border-color: #4a69bd;
+}
+
+QPushButton {
+    background-color: #2c5364;
+    background-image: linear-gradient(135deg, #2c5364, #4a69bd);
+    color: white;
+    font-weight: bold;
+    padding: 6px 14px;
+    font-size: 10pt;
+    min-height: 28px;
+    min-width: 100px;
+    max-width: 160px;
+    border-radius: 6px;
+    border: 2px solid #264a60; /* 添加边框增加立体感 */
+}
+
+QPushButton:hover {
+    background-color: #3a6386;
+    background-image: linear-gradient(135deg, #3a6386, #6688cc);
+    border-color: #30577a; /* 更深的边框颜色以响应悬停 */
+}
+
+QPushButton:pressed,
+QPushButton[translating="true"] {
+    background-color: #264a60;
+    background-image: none;
+    color: #a0b3c5;
+    border-color: #20445a; /* 按下状态下的边框颜色 */
+}
+
+QPushButton:disabled {
+    background-color: #303f4f;
+    color: #7a8fa6;
+    border-color: #303f4f;
+}
+
+QCheckBox {
+    spacing: 8px;
+    color: #e0e5ec;
+}
+
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #4a5b6e;
+    border-radius: 3px;
+    background: #273444;
+}
+
+QCheckBox::indicator:checked {
+    background: #4a69bd;
+    border-color: #4a69bd;
+}
+
+/* ========== 精细化控件样式 ========== */
+
+/* --- 主标题 --- */
+#mainTitle {
+    color: #cad2d3;
+    font-size: 20px;
+    font-weight: bold;
+    padding: 0;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+/* --- 开始按钮：改为优雅蓝色渐变，避免刺眼 --- */
+#startButton {
+    background-color: #2c5364;
+    background-image: linear-gradient(135deg, #2c5364, #4a69bd);
+    color: white;
+    font-weight: bold;
+    min-width: 250px;
+    max-width: 250px;
+    padding: 8px 16px;
+    font-size: 11pt;
+    border-radius: 6px;
+    border: 2px solid #264a60; /* 添加边框增加立体感 */
+}
+
+#startButton:hover {
+    background-color: #3a6386;
+    background-image: linear-gradient(135deg, #3a6386, #6688cc);
+    border-color: #30577a; /* 更深的边框颜色以响应悬停 */
+}
+
+#startButton:pressed,
+#startButton[translating="true"] {
+    background-color: #264a60;
+    background-image: none;
+    color: #a0b3c5;
+    border-color: #20445a; /* 按下状态下的边框颜色 */
+}
+
+/* --- 文件选择按钮：统一宽度，居中对齐 --- */
+#selectPdfButton, #selectOutputButton{
+    background-color: #2c5364;
+    background-image: linear-gradient(135deg, #2c5364, #4a69bd);
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    font-size: 10pt;
+    border-radius: 6px;
+    border: 2px solid #264a60; /* 添加边框增加立体感 */
+}
+
+#selectPdfButton:hover, #selectOutputButton:hover{
+    background-color: #3a6386;
+    background-image: linear-gradient(135deg, #3a6386, #6688cc);
+    border-color: #30577a; /* 更亮的边框颜色 */
+}
+
+/* --- 文件路径输入框：只读，浅灰背景 --- */
+#pdfPathEdit, #outputDirEdit {
+    background-color: #273444;
+    color: #a0b3c5;
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- PDF 类型下拉框 --- */
+#pdfTypeCombo {
+    min-width: 320px;
+    max-width: 320px;
+}
+
+/* --- OCR 设置区域 --- */
+#mineruApiKeyEdit {
+    min-width: 240px;
+    max-width: 365px;
+    background-color: #273444;
+}
+
+#mineruBaseUrlEdit {
+    min-width: 240px;
+    max-width: 365px;
+}
+
+#showMineruApiCheckbox {
+    color: #a0b3c5;
+}
+
+/* --- 模型配置：运行模式 & LLM 选择 --- */
+#runModeCombo, #llmCombo {
+    min-width: 260px;
+    max-width: 500px;
+}
+
+/* --- API 相关输入框 --- */
+#apiKeyEdit {
+    min-width: 280px;
+    max-width: 280px;
+    background-color: #273444;
+    border-color: #4a69bd;
+    font-family: monospace;
+}
+
+#baseUrlEdit, #modelNameEdit {
+    min-width: 280px;
+    max-width: 280px;
+}
+
+/* --- 本地模型路径 --- */
+#localModelPathEdit {
+    min-width: 100px;
+    max-width: 180px;
+    background-color: #273444;
+    border-color: #4a69bd;
+}
+
+#browseLocalModelButton {
+    background-color: #2c5364;
+    background-image: linear-gradient(135deg, #2c5364, #4a69bd);
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    font-size: 10pt;
+    border-radius: 6px;
+    border: 2px solid #264a60; /* 添加边框增加立体感 */
+}
+
+#browseLocalModelButton:hover {
+    background-color: #3a6386;
+    background-image: linear-gradient(135deg, #3a6386, #6688cc);
+    border-color: #30577a; /* 更亮的边框颜色 */
+}
+
+/* --- 并发数量调节器 --- */
+#concurrencySpinbox {
+    min-width: 80px;
+    max-width: 80px;
+}
+
+/* ========== 布局优化：增加间距，防止拥挤 ========== */
+
+/* 所有布局组件增加间距 */
+QVBoxLayout, QHBoxLayout {
+    spacing: 12px;
+}
+
+QHBoxLayout > QLabel {
+    padding-right: 8px;
+}
+
+/* 控件间最小间距 */
+QLabel ~ QLineEdit,
+QLabel ~ QComboBox,
+QLabel ~ QSpinBox,
+QLabel ~ QPushButton {
+    margin-left: 8px;
+}
+
+/* 防止文本溢出 */
+QLineEdit, QComboBox {
+    max-width: 300px;
+}
+
+
+/* ========== 社交媒体图标 ========== */
+
+#socialWidget {
+    /* 容器本身不设宽高，由子元素和布局决定 */
+    background: transparent;
+}
+
+QPushButton#socialButton {
+    /* 关键：让按钮尺寸完全由图标和 padding 决定 */
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    max-width: 32px;
+    min-height: 32px;
+    max-height: 32px;
+    
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 8;
+    
+    /* 确保图标居中填充 */
+    qproperty-iconSize: 32px 32px;
+}
+
+QPushButton#socialButton:hover {
+    /* 可选：悬停时加一点反馈 */
+    transform: scale(1.1); /* 注意：QSS 不支持 transform！需用其他方式 */
+    /* 替代方案：改变背景或边框 */
+    background-color: rgba(74, 105, 189, 0.1);
+    border-radius: 4px;
+}

@@ -1,0 +1,29 @@
+This distribution includes the following third-party software:
+
+1. PyMuPDF (fitz)
+   - License: GNU AGPLv3
+   - Source: https://github.com/pymupdf/PyMuPDF
+
+2. OpenCV (opencv-python)
+   - License: Apache License 2.0
+   - Source: https://github.com/opencv/opencv
+
+3. Playwright
+   - License: Apache License 2.0
+   - Source: https://github.com/microsoft/playwright
+
+4. llama.cpp (via llama_cpp_python)
+   - License: MIT
+   - Source: https://github.com/ggerganov/llama.cpp
+
+5. MinerU
+   - License: Apache License 2.0
+   - Source: https://github.com/opendatalab/MinerU
+
+6. qpdf
+   - License: Apache License 2.0
+   - Source: https://github.com/qpdf/qpdf
+
+7. Ghostscript
+   - License: GNU AGPLv3
+   - Source: https://www.ghostscript.com/
